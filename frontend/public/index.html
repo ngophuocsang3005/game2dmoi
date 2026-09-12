@@ -16,16 +16,17 @@
 
         body {
             display: flex;
-            justify-content: center;
+            justify-content: flex-start; /* Đẩy khung chat về góc bên TAY TRÁI */
             align-items: center;
             min-height: 100vh;
-            /* Đặt ảnh nền bên ngoài là anhnen1.jpg */
+            padding: 20px;
+            /* Ảnh nền anhnen1.jpg phủ kín toàn trang */
             background: url('anhnen1.jpg') no-repeat center center fixed;
             background-size: cover;
             position: relative;
         }
 
-        /* Lớp phủ mờ nhẹ giúp giao diện nổi bật trên hình nền */
+        /* Lớp phủ mờ nhẹ tôn khung chat lên */
         body::before {
             content: '';
             position: absolute;
@@ -34,33 +35,34 @@
             z-index: 0;
         }
 
-        /* Container chính chứa Khung Chat */
+        /* Container khung chat chính */
         .chat-container {
             position: relative;
             z-index: 1;
-            width: 440px;
-            padding: 25px;
-            background: rgba(255, 255, 255, 0.85);
+            width: 380px;
+            max-width: 100%;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.88);
             backdrop-filter: blur(12px);
-            border-radius: 20px;
+            border-radius: 18px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.5);
+            margin-left: 10px; /* Tạo khoảng nghỉ nhẹ sát mép trái */
         }
 
-        /* Phần Header chứa Icon và Tiêu đề */
+        /* Header chứa Icon & Tiêu đề */
         .chat-header {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 18px;
-            padding-bottom: 12px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
             border-bottom: 2px solid rgba(0, 0, 0, 0.08);
         }
 
-        /* Trang trí cho icon.jpg */
         .chat-icon {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid #6c5ce7;
@@ -68,20 +70,20 @@
         }
 
         .chat-header h2 {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             color: #2d3436;
             font-weight: 700;
         }
 
-        /* Khung hiển thị tin nhắn (vẫn giữ màu trắng nguyên bản) */
+        /* Ô chat hiển thị tin nhắn */
         #chat-box {
             width: 100%;
-            height: 320px;
+            height: 300px;
             border: 1px solid #e0e0e0;
             background: #ffffff;
             overflow-y: auto;
             padding: 12px;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             border-radius: 12px;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.04);
         }
@@ -97,20 +99,20 @@
             color: #6c5ce7;
         }
 
-        /* Khu vực nhập liệu */
+        /* Khu vực nhập nội dung */
         .input-group {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
 
         .input-row {
             display: flex;
-            gap: 8px;
+            gap: 6px;
         }
 
         input[type="text"] {
-            padding: 10px 14px;
+            padding: 10px 12px;
             border: 1px solid #ccc;
             border-radius: 8px;
             outline: none;
@@ -131,9 +133,9 @@
             flex: 1;
         }
 
-        /* Trang trí nút bấm */
+        /* Thiết kế nút bấm */
         button {
-            padding: 10px 16px;
+            padding: 10px 14px;
             border: none;
             border-radius: 8px;
             font-weight: 600;
@@ -164,21 +166,44 @@
         .btn-clear:hover {
             background-color: #e03e3e;
         }
+
+        /* TỐI ƯU GIAO DIỆN CHO ĐIỆN THOẠI (Responsive Mobile) */
+        @media (max-width: 768px) {
+            body {
+                justify-content: center; /* Trở về giữa màn hình khi xem trên điện thoại */
+                padding: 12px;
+            }
+
+            .chat-container {
+                width: 100%;
+                margin-left: 0;
+                padding: 16px;
+                border-radius: 14px;
+            }
+
+            #chat-box {
+                height: 260px; /* Thu gọn độ cao một chút trên điện thoại */
+            }
+
+            input[type="text"], button {
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 <body>
 
     <div class="chat-container">
-        <!-- Header với icon.jpg bên cạnh tiêu đề -->
+        <!-- Header có icon.jpg -->
         <div class="chat-header">
-            <img src="icon.jpg" alt="Icon" class="chat-icon" onerror="this.src='https://via.placeholder.com/48'">
+            <img src="icon.jpg" alt="Icon" class="chat-icon" onerror="this.src='https://via.placeholder.com/44'">
             <h2>App chat tầm bậy wibu</h2>
         </div>
 
-        <!-- Ô chat màu trắng giữ nguyên -->
+        <!-- Khung chat -->
         <div id="chat-box"></div>
 
-        <!-- Nhập liệu & Nút bấm -->
+        <!-- Ô nhập tin nhắn & Nút bấm -->
         <div class="input-group">
             <input type="text" id="usernameInput" placeholder="Tên của bạn...">
             <div class="input-row">
@@ -196,7 +221,7 @@
         const messageInput = document.getElementById('messageInput');
         const chatBox = document.getElementById('chat-box');
 
-        // Tải lịch sử khi vừa mở trang
+        // Tải lại lịch sử tin nhắn từ máy khi vào trang
         window.onload = () => {
             const history = JSON.parse(localStorage.getItem('chat_history')) || [];
             history.forEach(data => addMessageToBox(data));
@@ -219,7 +244,7 @@
             }
         }
 
-        // Nhận tin nhắn mới từ server
+        // Lắng nghe nhận tin nhắn mới
         socket.on('receive_message', (data) => {
             addMessageToBox(data);
 
