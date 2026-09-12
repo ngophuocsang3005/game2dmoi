@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>App chat tầm bậy wibu</title>
+    <!-- THÊM DÒNG NÀY ĐỂ VERCEL DÙNG ĐƯỢC HAM IO() -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f2f5; }
+        #chat-box { width: 400px; height: 300px; border: 1px solid #ccc; background: #fff; overflow-y: scroll; padding: 10px; margin-bottom: 10px; }
+        p { margin: 5px 0; }
+    </style>
+</head>
+<body>
+
+    <h2>Ứng dụng Chat Real-time</h2>
+    <div id="chat-box"></div>
+
+    <input type="text" id="usernameInput" placeholder="Tên của bạn">
+    <input type="text" id="messageInput" placeholder="Nhập tin nhắn...">
+    <button onclick="sendMessage()">Gửi</button>
+
+    <script>
+        // Trỏ kết nối trực tiếp về server Render
+        const socket = io('https://congamewibu.onrender.com');
+
+        const usernameInput = document.getElementById('usernameInput');
+        const messageInput = document.getElementById('messageInput');
+        const chatBox = document.getElementById('chat-box');
+
+        function sendMessage() {
+            const username = usernameInput.value.trim() || 'Người dùng';
+            const message = messageInput.value.trim();
+
+            if (message !== '') {
+                socket.emit('send_message', { username, message });
+                messageInput.value = '';
+            }
+        }
+
+        socket.on('receive_message', (data) => {
+            const msgElement = document.createElement('p');
+            msgElement.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
+            chatBox.appendChild(msgElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+    </script>
+</body>
+</html>
