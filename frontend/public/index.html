@@ -21,29 +21,43 @@
     <button onclick="sendMessage()">Gửi</button>
 
     <script>
-        // Trỏ kết nối trực tiếp về server Render
-        const socket = io('https://congamewibu.onrender.com');
+    const socket = io('https://congamewibu.onrender.com');
 
-        const usernameInput = document.getElementById('usernameInput');
-        const messageInput = document.getElementById('messageInput');
-        const chatBox = document.getElementById('chat-box');
+    const usernameInput = document.getElementById('usernameInput');
+    const messageInput = document.getElementById('messageInput');
+    const chatBox = document.getElementById('chat-box');
 
-        function sendMessage() {
-            const username = usernameInput.value.trim() || 'Người dùng';
-            const message = messageInput.value.trim();
+    // 1. Tự động tải lại lịch sử tin nhắn từ máy khi vừa mở trang
+    window.onload = () => {
+        const history = JSON.parse(localStorage.getItem('chat_history')) || [];
+        history.forEach(data => addMessageToBox(data));
+    };
 
-            if (message !== '') {
-                socket.emit('send_message', { username, message });
-                messageInput.value = '';
-            }
+    // Hàm phụ để vẽ tin nhắn lên giao diện
+    function addMessageToBox(data) {
+        const msgElement = document.createElement('p');
+        msgElement.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
+        chatBox.appendChild(msgElement);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function sendMessage() {
+        const username = usernameInput.value.trim() || 'Người dùng';
+        const message = messageInput.value.trim();
+
+        if (message !== '') {
+            socket.emit('send_message', { username, message });
+            messageInput.value = '';
         }
+    }
 
-        socket.on('receive_message', (data) => {
-            const msgElement = document.createElement('p');
-            msgElement.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
-            chatBox.appendChild(msgElement);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        });
-    </script>
-</body>
-</html>
+    // 2. Khi nhận tin nhắn mới -> Vẽ ra ô chat + Lưu tiếp vào máy
+    socket.on('receive_message', (data) => {
+        addMessageToBox(data);
+
+        // Lưu vào bộ nhớ máy
+        const history = JSON.parse(localStorage.getItem('chat_history')) || [];
+        history.push(data);
+        localStorage.setItem('chat_history', JSON.stringify(history));
+    });
+</script>
