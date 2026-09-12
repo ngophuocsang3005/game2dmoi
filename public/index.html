@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Chat Simple</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f2f5; }
+        #chat-box { width: 400px; height: 300px; border: 1px solid #ccc; background: #fff; overflow-y: scroll; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
+        .message { margin-bottom: 8px; }
+        .username { font-weight: bold; color: #007bff; }
+        input, button { padding: 8px 12px; margin-right: 5px; }
+    </style>
+</head>
+<body>
+
+    <h2>Ứng dụng Chat Real-time</h2>
+    <div id="chat-box"></div>
+
+    <input type="text" id="username" placeholder="Tên của bạn..." style="width: 100px;">
+    <input type="text" id="message-input" placeholder="Nhập tin nhắn..." style="width: 200px;">
+    <button onclick="sendMessage()">Gửi</button>
+
+    <!-- Nhúng thư viện Socket.io client -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const chatBox = document.getElementById('chat-box');
+        const usernameInput = document.getElementById('username');
+        const messageInput = document.getElementById('message-input');
+
+        // Hàm gửi tin nhắn
+        function sendMessage() {
+            const username = usernameInput.value.trim() || 'Ẩn danh';
+            const message = messageInput.value.trim();
+
+            if (message !== '') {
+                // Gửi dữ liệu lên server qua sự kiện 'send_message'
+                socket.emit('send_message', { username, message });
+                messageInput.value = ''; // Xóa khung nhập sau khi gửi
+            }
+        }
+
+        // Lắng nghe phím Enter để gửi
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Nhận tin nhắn từ server phát về
+        socket.on('receive_message', (data) => {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message');
+            msgDiv.innerHTML = `<span class="username">${data.username}:</span> ${data.message}`;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight; // Tự cuộn xuống tin nhắn mới nhất
+        });
+    </script>
+</body>
+</html>
