@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>App chat tầm bậy wibu</title>
-    <!-- THÊM DÒNG NÀY ĐỂ VERCEL DÙNG ĐƯỢC HAM IO() -->
+    <!-- THÊM DÒNG NÀY ĐỂ VERCEL DÙNG ĐƯỢC HÀM IO() -->
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background: #f0f2f5; }
         #chat-box { width: 400px; height: 300px; border: 1px solid #ccc; background: #fff; overflow-y: scroll; padding: 10px; margin-bottom: 10px; }
         p { margin: 5px 0; }
+        .btn-clear { background-color: #ff4d4d; color: white; border: none; padding: 3px 8px; cursor: pointer; border-radius: 3px; }
+        .btn-clear:hover { background-color: #cc0000; }
     </style>
 </head>
 <body>
@@ -19,45 +21,59 @@
     <input type="text" id="usernameInput" placeholder="Tên của bạn">
     <input type="text" id="messageInput" placeholder="Nhập tin nhắn...">
     <button onclick="sendMessage()">Gửi</button>
+    
+    <!-- NÚT XÓA LỊCH SỬ MỚI THÊM -->
+    <button onclick="clearChat()" class="btn-clear">Xóa lịch sử</button>
 
     <script>
-    const socket = io('https://congamewibu.onrender.com');
+        // Trỏ kết nối trực tiếp về server Render
+        const socket = io('https://congamewibu.onrender.com');
 
-    const usernameInput = document.getElementById('usernameInput');
-    const messageInput = document.getElementById('messageInput');
-    const chatBox = document.getElementById('chat-box');
+        const usernameInput = document.getElementById('usernameInput');
+        const messageInput = document.getElementById('messageInput');
+        const chatBox = document.getElementById('chat-box');
 
-    // 1. Tự động tải lại lịch sử tin nhắn từ máy khi vừa mở trang
-    window.onload = () => {
-        const history = JSON.parse(localStorage.getItem('chat_history')) || [];
-        history.forEach(data => addMessageToBox(data));
-    };
+        // 1. Tự động tải lại lịch sử tin nhắn từ máy khi vừa mở trang
+        window.onload = () => {
+            const history = JSON.parse(localStorage.getItem('chat_history')) || [];
+            history.forEach(data => addMessageToBox(data));
+        };
 
-    // Hàm phụ để vẽ tin nhắn lên giao diện
-    function addMessageToBox(data) {
-        const msgElement = document.createElement('p');
-        msgElement.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
-        chatBox.appendChild(msgElement);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function sendMessage() {
-        const username = usernameInput.value.trim() || 'Người dùng';
-        const message = messageInput.value.trim();
-
-        if (message !== '') {
-            socket.emit('send_message', { username, message });
-            messageInput.value = '';
+        // Hàm phụ để vẽ tin nhắn lên giao diện
+        function addMessageToBox(data) {
+            const msgElement = document.createElement('p');
+            msgElement.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
+            chatBox.appendChild(msgElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
-    }
 
-    // 2. Khi nhận tin nhắn mới -> Vẽ ra ô chat + Lưu tiếp vào máy
-    socket.on('receive_message', (data) => {
-        addMessageToBox(data);
+        function sendMessage() {
+            const username = usernameInput.value.trim() || 'Người dùng';
+            const message = messageInput.value.trim();
 
-        // Lưu vào bộ nhớ máy
-        const history = JSON.parse(localStorage.getItem('chat_history')) || [];
-        history.push(data);
-        localStorage.setItem('chat_history', JSON.stringify(history));
-    });
-</script>
+            if (message !== '') {
+                socket.emit('send_message', { username, message });
+                messageInput.value = '';
+            }
+        }
+
+        // 2. Khi nhận tin nhắn mới -> Vẽ ra ô chat + Lưu tiếp vào máy
+        socket.on('receive_message', (data) => {
+            addMessageToBox(data);
+
+            // Lưu vào bộ nhớ máy
+            const history = JSON.parse(localStorage.getItem('chat_history')) || [];
+            history.push(data);
+            localStorage.setItem('chat_history', JSON.stringify(history));
+        });
+
+        // 3. Hàm xử lý xóa lịch sử chat khi bấm nút
+        function clearChat() {
+            if (confirm("M có chắc muốn xóa sạch lịch sử chat trên máy này không?")) {
+                localStorage.removeItem('chat_history'); // Xóa trong bộ nhớ browser
+                chatBox.innerHTML = ''; // Làm sạch ô chat
+            }
+        }
+    </script>
+</body>
+</html>
