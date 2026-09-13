@@ -59,7 +59,6 @@
         .btn-select { background-color: #00b894; color: white; padding: 8px 16px; font-size: 0.9rem; }
         .btn-select:hover { background-color: #00a884; }
 
-        /* NỀN TRẮNG CANVAS */
         #gameCanvas { border-radius: 12px; display: block; border: 2px solid #ccc; background: #ffffff; }
         .guide-text { color: #ffeaa7; font-size: 0.85rem; text-align: center; }
 
@@ -97,7 +96,7 @@
         <canvas id="gameCanvas" width="500" height="400"></canvas>
         
         <div class="guide-text">
-            🎮 <b>Di chuyển</b>: W-A-S-D | ⚔️ <b>Chém thường</b>: SPACE | 👁️ <b>Sharingan (P1)</b>: Phím E
+            🎮 <b>Di chuyển</b>: A - D | 🦘 <b>Nhảy</b>: W / SPACE | 👁️ <b>Sharingan (P1)</b>: Phím E
         </div>
     </div>
 
@@ -144,7 +143,7 @@
             }
         }
 
-        // --- 2. GAME LOGIC ---
+        // --- 2. GAME LOGIC (GRAVITY & JUMP) ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -152,11 +151,16 @@
         const p2Img = new Image(); p2Img.src = 'player2.png';
         const sharinganImg = new Image(); sharinganImg.src = 'sharingan1.jpg';
 
+        const groundY = 320; // Vị trí đường mặt đất
+        const gravity = 0.6; // Lực hút Trái Đất
+        const jumpPower = -12; // Lực nhảy
+
         let myRole = 'p1';
 
+        // Tăng kích thước nhân vật lên size = 80
         let players = {
-            p1: { x: 60, y: 175, size: 50, hp: 3, active: true, isMoving: false, walkFrame: 0, angle: 0, isAttacking: false },
-            p2: { x: 390, y: 175, size: 50, hp: 3, active: true, isMoving: false, walkFrame: 0, angle: Math.PI, isAttacking: false }
+            p1: { x: 50, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 3, active: true },
+            p2: { x: 370, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 3, active: true }
         };
 
         let sharinganSkill = { active: false, x: 0, y: 0, angle: 0, speed: 8 };
@@ -178,42 +182,44 @@
         let keys = {};
         window.addEventListener('keydown', (e) => { 
             keys[e.key.toLowerCase()] = true; 
+            
+            // Nhảy khi bấm W hoặc Space
+            if ((e.key.toLowerCase() === 'w' || e.key === ' ') && myRole && players[myRole].isGrounded) {
+                players[myRole].vy = jumpPower;
+                players[myRole].isGrounded = false;
+            }
+
+            // Tung chiêu Sharingan (P1)
             if (e.key.toLowerCase() === 'e' && myRole === 'p1' && !sharinganSkill.active) {
                 fireSharingan();
             }
         });
+
         window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
         function fireSharingan() {
             sharinganSkill.active = true;
-            sharinganSkill.x = players.p1.x + 25;
-            sharinganSkill.y = players.p1.y + 25;
+            sharinganSkill.x = players.p1.x + players.p1.size / 2;
+            sharinganSkill.y = players.p1.y + players.p1.size / 2;
         }
 
         function updateGame() {
             if (myRole && players[myRole]) {
                 let p = players[myRole];
-                p.isMoving = false;
-                let dx = 0, dy = 0;
 
-                if (keys['w']) dy -= 4;
-                if (keys['s']) dy += 4;
-                if (keys['a']) dx -= 4;
-                if (keys['d']) dx += 4;
+                // Di chuyển Trái/Phải (A / D)
+                if (keys['a']) p.x = Math.max(0, p.x - 4);
+                if (keys['d']) p.x = Math.min(canvas.width - p.size, p.x + 4);
 
-                if (dx !== 0 || dy !== 0) {
-                    p.isMoving = true;
-                    p.x = Math.max(0, Math.min(canvas.width - p.size, p.x + dx));
-                    p.y = Math.max(0, Math.min(canvas.height - p.size, p.y + dy));
-                    p.angle = Math.atan2(dy, dx);
-                    p.walkFrame += 0.2;
-                } else {
-                    p.walkFrame = 0;
-                }
+                // Tính toán Trọng lực (Gravity)
+                p.vy += gravity;
+                p.y += p.vy;
 
-                if (keys[' '] && !p.isAttacking) {
-                    p.isAttacking = true;
-                    setTimeout(() => { p.isAttacking = false; }, 200);
+                // Kiểm tra va chạm mặt đất
+                if (p.y + p.size >= groundY) {
+                    p.y = groundY - p.size;
+                    p.vy = 0;
+                    p.isGrounded = true;
                 }
 
                 socket.emit('update_player', { role: myRole, data: p });
@@ -225,14 +231,18 @@
                 }
             });
 
+            // Xử lý đạn Sharingan
             if (sharinganSkill.active) {
                 sharinganSkill.angle += 0.3;
-                let moveAngle = Math.atan2(players.p2.y - sharinganSkill.y, players.p2.x - sharinganSkill.x);
+                let targetX = players.p2.x + players.p2.size / 2;
+                let targetY = players.p2.y + players.p2.size / 2;
+                let moveAngle = Math.atan2(targetY - sharinganSkill.y, targetX - sharinganSkill.x);
+                
                 sharinganSkill.x += Math.cos(moveAngle) * sharinganSkill.speed;
                 sharinganSkill.y += Math.sin(moveAngle) * sharinganSkill.speed;
 
-                let dist = Math.hypot(sharinganSkill.x - (players.p2.x + 25), sharinganSkill.y - (players.p2.y + 25));
-                if (dist < 30) {
+                let dist = Math.hypot(sharinganSkill.x - targetX, sharinganSkill.y - targetY);
+                if (dist < 40) {
                     sharinganSkill.active = false;
                     players.p2.hp = Math.max(0, players.p2.hp - 2);
                 }
@@ -247,9 +257,15 @@
         }
 
         function drawGame() {
-            // Xoá và tô nền TRẮNG
+            // Nền trắng
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Vẽ ĐƯỜNG MẶT ĐẤT
+            ctx.fillStyle = '#8e44ad';
+            ctx.fillRect(0, groundY, canvas.width, 5); // Đường gạch ngang
+            ctx.fillStyle = '#f39c12';
+            ctx.fillRect(0, groundY + 5, canvas.width, canvas.height - groundY - 5); // Khối đất phía dưới
 
             // Vẽ Player 1
             if (players.p1.active) drawCharacter(players.p1, p1Img, '#6c5ce7', 'P1');
@@ -271,44 +287,23 @@
                 ctx.restore();
             }
 
-            // Thanh máu (Màu chữ đen nổi bật trên nền trắng)
+            // Thanh máu
             ctx.fillStyle = '#2d3436';
-            ctx.font = 'bold 14px Arial';
+            ctx.font = 'bold 15px Arial';
             if (players.p1.active) ctx.fillText(`P1: ${'❤️'.repeat(players.p1.hp)}`, 15, 25);
             if (players.p2.active) ctx.fillText(`P2: ${'❤️'.repeat(players.p2.hp)}`, 380, 25);
         }
 
         function drawCharacter(p, img, fallbackColor, label) {
-            ctx.save();
-            let centerX = p.x + p.size / 2;
-            let centerY = p.y + p.size / 2;
-            ctx.translate(centerX, centerY);
-
-            if (p.isMoving) {
-                let bounceY = Math.sin(p.walkFrame * 2) * 4;
-                let wobbleAngle = Math.cos(p.walkFrame) * 0.15;
-                ctx.translate(0, bounceY);
-                ctx.rotate(wobbleAngle);
-            }
-
             if (img.complete && img.naturalWidth !== 0) {
-                ctx.drawImage(img, -p.size / 2, -p.size / 2, p.size, p.size);
+                ctx.drawImage(img, p.x, p.y, p.size, p.size);
             } else {
                 ctx.fillStyle = fallbackColor;
-                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                ctx.fillRect(p.x, p.y, p.size, p.size);
                 ctx.fillStyle = '#fff';
-                ctx.font = '12px Arial';
+                ctx.font = 'bold 16px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText(label, 0, 4);
-            }
-            ctx.restore();
-
-            if (p.isAttacking) {
-                ctx.beginPath();
-                ctx.strokeStyle = '#fdcb6e';
-                ctx.lineWidth = 5;
-                ctx.arc(centerX, centerY, 40, p.angle - Math.PI/3, p.angle + Math.PI/3);
-                ctx.stroke();
+                ctx.fillText(label, p.x + p.size / 2, p.y + p.size / 2 + 5);
             }
         }
 
