@@ -3,30 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App chat tầm bậy wibu</title>
-    <!-- Socket.io CDN -->
+    <title>App Chat & Game Wibu 2D</title>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
             display: flex;
-            justify-content: flex-start; /* Đẩy khung chat về góc bên TAY TRÁI */
+            justify-content: flex-start;
             align-items: center;
             min-height: 100vh;
             padding: 20px;
-            /* Ảnh nền anhnen1.jpg phủ kín toàn trang */
             background: url('anhnen1.jpg') no-repeat center center fixed;
             background-size: cover;
             position: relative;
+            gap: 20px;
         }
 
-        /* Lớp phủ mờ nhẹ tôn khung chat lên */
         body::before {
             content: '';
             position: absolute;
@@ -35,11 +32,11 @@
             z-index: 0;
         }
 
-        /* Container khung chat chính */
+        /* KHUNG CHAT BÊN TRÁI */
         .chat-container {
             position: relative;
             z-index: 1;
-            width: 380px;
+            width: 340px;
             max-width: 100%;
             padding: 20px;
             background: rgba(255, 255, 255, 0.88);
@@ -47,163 +44,119 @@
             border-radius: 18px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.5);
-            margin-left: 10px; /* Tạo khoảng nghỉ nhẹ sát mép trái */
+            flex-shrink: 0;
         }
 
-        /* Header chứa Icon & Tiêu đề */
         .chat-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 15px; padding-bottom: 10px;
             border-bottom: 2px solid rgba(0, 0, 0, 0.08);
         }
 
         .chat-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #6c5ce7;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            width: 44px; height: 44px; border-radius: 50%;
+            object-fit: cover; border: 2px solid #6c5ce7;
         }
 
-        .chat-header h2 {
-            font-size: 1.2rem;
-            color: #2d3436;
-            font-weight: 700;
-        }
+        .chat-header h2 { font-size: 1.2rem; color: #2d3436; }
 
-        /* Ô chat hiển thị tin nhắn */
         #chat-box {
-            width: 100%;
-            height: 300px;
-            border: 1px solid #e0e0e0;
-            background: #ffffff;
-            overflow-y: auto;
-            padding: 12px;
-            margin-bottom: 12px;
-            border-radius: 12px;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.04);
+            width: 100%; height: 280px; border: 1px solid #e0e0e0;
+            background: #ffffff; overflow-y: auto; padding: 12px;
+            margin-bottom: 12px; border-radius: 12px;
         }
 
-        #chat-box p {
-            margin-bottom: 8px;
-            line-height: 1.4;
-            color: #2d3436;
-            word-wrap: break-word;
-        }
+        #chat-box p { margin-bottom: 8px; line-height: 1.4; color: #2d3436; word-wrap: break-word; }
+        #chat-box p strong { color: #6c5ce7; }
 
-        #chat-box p strong {
-            color: #6c5ce7;
-        }
-
-        /* Khu vực nhập nội dung */
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .input-row {
-            display: flex;
-            gap: 6px;
-        }
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        .input-row { display: flex; gap: 6px; }
 
         input[type="text"] {
-            padding: 10px 12px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            outline: none;
-            font-size: 0.95rem;
-            transition: all 0.2s ease;
+            padding: 10px 12px; border: 1px solid #ccc;
+            border-radius: 8px; outline: none; font-size: 0.95rem;
         }
+        #usernameInput { width: 100%; }
+        #messageInput { flex: 1; }
 
-        input[type="text"]:focus {
-            border-color: #6c5ce7;
-            box-shadow: 0 0 8px rgba(108, 92, 231, 0.3);
-        }
-
-        #usernameInput {
-            width: 100%;
-        }
-
-        #messageInput {
-            flex: 1;
-        }
-
-        /* Thiết kế nút bấm */
         button {
-            padding: 10px 14px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.1s ease, background-color 0.2s ease;
+            padding: 10px 14px; border: none; border-radius: 8px;
+            font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        button:active { transform: scale(0.96); }
+        button:disabled { background-color: #b2bec3 !important; cursor: not-allowed; }
+
+        .btn-send { background-color: #6c5ce7; color: white; }
+        .btn-clear { background-color: #ff4d4d; color: white; }
+
+        /* KHUNG GAME BÊN PHẢI */
+        .game-container {
+            position: relative;
+            z-index: 1;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
         }
 
-        button:active {
-            transform: scale(0.96);
+        /* NÚT CHỌN NHÂN VẬT */
+        .select-player-box {
+            display: flex;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 12px;
+            width: 100%;
+            justify-content: center;
         }
 
-        .btn-send {
-            background-color: #6c5ce7;
+        .btn-select {
+            background-color: #00b894;
             color: white;
-            box-shadow: 0 4px 10px rgba(108, 92, 231, 0.3);
+            padding: 8px 16px;
+            font-size: 0.9rem;
         }
 
-        .btn-send:hover {
-            background-color: #5b4bc4;
+        .btn-select:hover { background-color: #00a884; }
+
+        #gameCanvas {
+            border-radius: 12px;
+            display: block;
+            border: 2px solid #6c5ce7;
+            background: #000;
         }
 
-        .btn-clear {
-            background-color: #ff4d4d;
-            color: white;
-            box-shadow: 0 4px 10px rgba(255, 77, 77, 0.3);
+        .guide-text {
+            color: #ffeaa7;
+            font-size: 0.85rem;
+            text-align: center;
         }
 
-        .btn-clear:hover {
-            background-color: #e03e3e;
-        }
-
-        /* TỐI ƯU GIAO DIỆN CHO ĐIỆN THOẠI (Responsive Mobile) */
-        @media (max-width: 768px) {
-            body {
-                justify-content: center; /* Trở về giữa màn hình khi xem trên điện thoại */
-                padding: 12px;
-            }
-
-            .chat-container {
-                width: 100%;
-                margin-left: 0;
-                padding: 16px;
-                border-radius: 14px;
-            }
-
-            #chat-box {
-                height: 260px; /* Thu gọn độ cao một chút trên điện thoại */
-            }
-
-            input[type="text"], button {
-                font-size: 0.9rem;
-            }
+        @media (max-width: 900px) {
+            body { flex-direction: column-reverse; justify-content: center; padding: 10px; }
+            .chat-container { width: 100%; }
+            .game-container { width: 100%; }
+            #gameCanvas { width: 100%; height: auto; }
         }
     </style>
 </head>
 <body>
 
+    <!-- KHUNG CHAT -->
     <div class="chat-container">
-        <!-- Header có icon.jpg -->
         <div class="chat-header">
             <img src="icon.jpg" alt="Icon" class="chat-icon" onerror="this.src='https://via.placeholder.com/44'">
-            <h2>App chat tầm bậy wibu</h2>
+            <h2>App chat wibu</h2>
         </div>
 
-        <!-- Khung chat -->
         <div id="chat-box"></div>
 
-        <!-- Ô nhập tin nhắn & Nút bấm -->
         <div class="input-group">
             <input type="text" id="usernameInput" placeholder="Tên của bạn...">
             <div class="input-row">
@@ -214,14 +167,27 @@
         </div>
     </div>
 
-    <script>
-        const socket = io('https://congamewibu.onrender.com');
+    <!-- KHUNG GAME & LOBBY CHỌN nhân VẬT -->
+    <div class="game-container">
+        <div class="select-player-box">
+            <button id="btnP1" onclick="selectRole('p1')" class="btn-select">Chọn Player 1</button>
+            <button id="btnP2" onclick="selectRole('p2')" class="btn-select">Chọn Player 2</button>
+        </div>
 
+        <canvas id="gameCanvas" width="500" height="400"></canvas>
+        
+        <div class="guide-text">
+            🎮 <b>Di chuyển</b>: W-A-S-D | ⚔️ <b>Chém thường</b>: SPACE | 👁️ <b>Sharingan (P1)</b>: Phím E
+        </div>
+    </div>
+
+    <script>
+        // --- 1. CHAT LOGIC ---
+        const socket = io('https://congamewibu.onrender.com');
         const usernameInput = document.getElementById('usernameInput');
         const messageInput = document.getElementById('messageInput');
         const chatBox = document.getElementById('chat-box');
 
-        // Tải lại lịch sử tin nhắn từ máy khi vào trang
         window.onload = () => {
             const history = JSON.parse(localStorage.getItem('chat_history')) || [];
             history.forEach(data => addMessageToBox(data));
@@ -237,29 +203,228 @@
         function sendMessage() {
             const username = usernameInput.value.trim() || 'Wibu Ẩn Danh';
             const message = messageInput.value.trim();
-
             if (message !== '') {
                 socket.emit('send_message', { username, message });
                 messageInput.value = '';
             }
         }
 
-        // Lắng nghe nhận tin nhắn mới
         socket.on('receive_message', (data) => {
             addMessageToBox(data);
-
             const history = JSON.parse(localStorage.getItem('chat_history')) || [];
             history.push(data);
             localStorage.setItem('chat_history', JSON.stringify(history));
         });
 
-        // Xóa lịch sử chat
         function clearChat() {
-            if (confirm("M có chắc muốn xóa sạch lịch sử chat trên máy này không?")) {
+            if (confirm("Xóa lịch sử chat?")) {
                 localStorage.removeItem('chat_history');
                 chatBox.innerHTML = '';
             }
         }
+
+        // --- 2. GAME LOGIC ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Nạp các hình ảnh
+        const bgImg = new Image(); bgImg.src = 'nentrochoi.jpg';
+        const p1Img = new Image(); p1Img.src = 'player1.png';
+        const p2Img = new Image(); p2Img.src = 'player2.png';
+        const sharinganImg = new Image(); sharinganImg.src = 'sharingan1.jpg';
+
+        let myRole = null; // Role người chơi hiện tại ('p1' hoặc 'p2')
+
+        // Trạng thái nhân vật
+        let players = {
+            p1: { x: 60, y: 175, size: 50, hp: 3, active: false, isMoving: false, walkFrame: 0, angle: 0, isAttacking: false },
+            p2: { x: 390, y: 175, size: 50, hp: 3, active: false, isMoving: false, walkFrame: 0, angle: Math.PI, isAttacking: false }
+        };
+
+        // Đạn Sharingan của P1
+        let sharinganSkill = {
+            active: false,
+            x: 0, y: 0,
+            targetX: 0, targetY: 0,
+            angle: 0,
+            speed: 8
+        };
+
+        // Bấm chọn Vai chơi
+        function selectRole(role) {
+            myRole = role;
+            players[role].active = true;
+            
+            document.getElementById('btnP1').disabled = (role === 'p1');
+            document.getElementById('btnP2').disabled = (role === 'p2');
+
+            // Gửi thông báo đã chọn vai qua Socket
+            socket.emit('select_role', role);
+        }
+
+        socket.on('role_selected', (role) => {
+            players[role].active = true;
+            if (role === 'p1') document.getElementById('btnP1').disabled = true;
+            if (role === 'p2') document.getElementById('btnP2').disabled = true;
+        });
+
+        // Bắt phím điều khiển
+        let keys = {};
+        window.addEventListener('keydown', (e) => { 
+            keys[e.key.toLowerCase()] = true; 
+            
+            // Dùng chiêu Sharingan (Phím E - Chỉ dành cho Player 1)
+            if (e.key.toLowerCase() === 'e' && myRole === 'p1' && !sharinganSkill.active) {
+                fireSharingan();
+            }
+        });
+        window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+        function fireSharingan() {
+            sharinganSkill.active = true;
+            sharinganSkill.x = players.p1.x + 25;
+            sharinganSkill.y = players.p1.y + 25;
+            sharinganSkill.targetX = players.p2.x + 25;
+            sharinganSkill.targetY = players.p2.y + 25;
+        }
+
+        function updateGame() {
+            if (myRole && players[myRole]) {
+                let p = players[myRole];
+                p.isMoving = false;
+                let dx = 0, dy = 0;
+
+                if (keys['w']) dy -= 4;
+                if (keys['s']) dy += 4;
+                if (keys['a']) dx -= 4;
+                if (keys['d']) dx += 4;
+
+                if (dx !== 0 || dy !== 0) {
+                    p.isMoving = true;
+                    p.x = Math.max(0, Math.min(canvas.width - p.size, p.x + dx));
+                    p.y = Math.max(0, Math.min(canvas.height - p.size, p.y + dy));
+                    p.angle = Math.atan2(dy, dx);
+                    p.walkFrame += 0.2;
+                } else {
+                    p.walkFrame = 0;
+                }
+
+                // Chém thường (Space)
+                if (keys[' '] && !p.isAttacking) {
+                    p.isAttacking = true;
+                    setTimeout(() => { p.isAttacking = false; }, 200);
+                }
+
+                // Đồng bộ tọa độ cho máy khác
+                socket.emit('update_player', { role: myRole, data: p });
+            }
+
+            // Nhận tọa độ đồng bộ từ Socket
+            socket.on('player_updated', (data) => {
+                if (data.role !== myRole) {
+                    players[data.role] = { ...players[data.role], ...data.data };
+                }
+            });
+
+            // Xử lý đạn Sharingan xoay & bay
+            if (sharinganSkill.active) {
+                sharinganSkill.angle += 0.3; // Xoay vòng tròn
+                let moveAngle = Math.atan2(players.p2.y - sharinganSkill.y, players.p2.x - sharinganSkill.x);
+                sharinganSkill.x += Math.cos(moveAngle) * sharinganSkill.speed;
+                sharinganSkill.y += Math.sin(moveAngle) * sharinganSkill.speed;
+
+                // Va chạm vào Player 2 ➔ Trừ 2 HP
+                let dist = Math.hypot(sharinganSkill.x - (players.p2.x + 25), sharinganSkill.y - (players.p2.y + 25));
+                if (dist < 30) {
+                    sharinganSkill.active = false;
+                    players.p2.hp = Math.max(0, players.p2.hp - 2); // Trừ thẳng 2 HP
+                }
+
+                // Bay ra khỏi màn hình thì mất
+                if (sharinganSkill.x < 0 || sharinganSkill.x > canvas.width || sharinganSkill.y < 0 || sharinganSkill.y > canvas.height) {
+                    sharinganSkill.active = false;
+                }
+            }
+
+            drawGame();
+            requestAnimationFrame(updateGame);
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Vẽ Ảnh Nền trò chơi (nentrochoi.jpg)
+            if (bgImg.complete) {
+                ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = '#2c3e50';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // 2. Vẽ Player 1 (nếu đã kích hoạt/chọn)
+            if (players.p1.active) {
+                drawCharacter(players.p1, p1Img, '#6c5ce7');
+            }
+
+            // 3. Vẽ Player 2 (nếu đã kích hoạt/chọn)
+            if (players.p2.active) {
+                drawCharacter(players.p2, p2Img, '#ff4d4d');
+            }
+
+            // 4. Vẽ Chiêu Sharingan Xoay Tròn
+            if (sharinganSkill.active) {
+                ctx.save();
+                ctx.translate(sharinganSkill.x, sharinganSkill.y);
+                ctx.rotate(sharinganSkill.angle); // Xoay con mắt
+                if (sharinganImg.complete) {
+                    ctx.drawImage(sharinganImg, -20, -20, 40, 40);
+                } else {
+                    ctx.fillStyle = 'red';
+                    ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI * 2); ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            // 5. Vẽ Thanh Máu
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px Arial';
+            if (players.p1.active) ctx.fillText(`P1: ${'❤️'.repeat(players.p1.hp)}`, 15, 25);
+            if (players.p2.active) ctx.fillText(`P2: ${'❤️'.repeat(players.p2.hp)}`, 380, 25);
+        }
+
+        // Hàm vẽ nhân vật có animation nhún đung đưa
+        function drawCharacter(p, img, fallbackColor) {
+            ctx.save();
+            let centerX = p.x + p.size / 2;
+            let centerY = p.y + p.size / 2;
+            ctx.translate(centerX, centerY);
+
+            if (p.isMoving) {
+                let bounceY = Math.sin(p.walkFrame * 2) * 4;
+                let wobbleAngle = Math.cos(p.walkFrame) * 0.15;
+                ctx.translate(0, bounceY);
+                ctx.rotate(wobbleAngle);
+            }
+
+            if (img.complete) {
+                ctx.drawImage(img, -p.size / 2, -p.size / 2, p.size, p.size);
+            } else {
+                ctx.fillStyle = fallbackColor;
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+            }
+            ctx.restore();
+
+            // Hiệu ứng chém Space
+            if (p.isAttacking) {
+                ctx.beginPath();
+                ctx.strokeStyle = '#ffeaa7';
+                ctx.lineWidth = 5;
+                ctx.arc(centerX, centerY, 40, p.angle - Math.PI/3, p.angle + Math.PI/3);
+                ctx.stroke();
+            }
+        }
+
+        updateGame();
     </script>
 </body>
 </html>
