@@ -55,9 +55,9 @@
             display: flex; flex-direction: column; align-items: center; gap: 10px;
         }
 
-        .select-player-box { display: flex; gap: 15px; background: rgba(255, 255, 255, 0.2); padding: 8px 15px; border-radius: 12px; width: 100%; justify-content: center; }
-        .btn-select { background-color: #00b894; color: white; padding: 8px 16px; font-size: 0.9rem; }
-        .btn-select:hover { background-color: #00a884; }
+        .select-player-box { display: flex; gap: 10px; background: rgba(255, 255, 255, 0.2); padding: 8px 15px; border-radius: 12px; width: 100%; justify-content: center; align-items: center; }
+        .btn-select { background-color: #00b894; color: white; padding: 8px 14px; font-size: 0.85rem; }
+        .btn-restart { background-color: #e67e22; color: white; padding: 8px 14px; font-size: 0.85rem; }
 
         #gameCanvas { border-radius: 12px; display: block; border: 2px solid #ccc; background: #ffffff; }
         .guide-text { color: #ffeaa7; font-size: 0.82rem; text-align: center; line-height: 1.5; }
@@ -91,13 +91,14 @@
         <div class="select-player-box">
             <button id="btnP1" onclick="selectRole('p1')" class="btn-select">Chọn Player 1</button>
             <button id="btnP2" onclick="selectRole('p2')" class="btn-select">Chọn Player 2</button>
+            <button onclick="restartGame()" class="btn-restart">Chơi lại 🔄</button>
         </div>
 
         <canvas id="gameCanvas" width="500" height="400"></canvas>
         
         <div class="guide-text">
             🎮 <b>Di chuyển</b>: A - D | 🦘 <b>Nhảy</b>: W / SPACE <br>
-            ⚔️ <b>Đánh thường</b>: Phím J | 🛡️ <b>Block (Đỡ)</b>: Phím K | 👁️ <b>Sharingan (P1)</b>: Phím E
+            ⚔️ <b>Đánh thường</b>: Phím J | 🛡️ <b>Block</b>: Phím K | 👁️ <b>Sharingan (P1)</b>: Phím E
         </div>
     </div>
 
@@ -158,10 +159,9 @@
 
         let myRole = 'p1';
 
-        // direction: 1 = Phải, -1 = Trái
         let players = {
-            p1: { x: 50, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 5, active: true, direction: 1, isAttacking: false, isBlocking: false },
-            p2: { x: 370, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 5, active: true, direction: -1, isAttacking: false, isBlocking: false }
+            p1: { x: 50, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 5, active: true, direction: 1, isAttacking: false, isBlocking: false, hitTimer: 0, walkFrame: 0 },
+            p2: { x: 370, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 5, active: true, direction: -1, isAttacking: false, isBlocking: false, hitTimer: 0, walkFrame: 0 }
         };
 
         let sharinganSkill = { active: false, x: 0, y: 0, timer: null };
@@ -180,32 +180,39 @@
             if (role === 'p2') document.getElementById('btnP2').disabled = true;
         });
 
+        function restartGame() {
+            players.p1.hp = 5; players.p1.x = 50; players.p1.y = groundY - 80;
+            players.p2.hp = 5; players.p2.x = 370; players.p2.y = groundY - 80;
+            sharinganSkill.active = false;
+            socket.emit('restart_game');
+        }
+
+        socket.on('game_restarted', () => {
+            players.p1.hp = 5; players.p1.x = 50; players.p1.y = groundY - 80;
+            players.p2.hp = 5; players.p2.x = 370; players.p2.y = groundY - 80;
+            sharinganSkill.active = false;
+        });
+
         let keys = {};
         window.addEventListener('keydown', (e) => { 
             let key = e.key.toLowerCase();
             keys[key] = true; 
             
-            // Nhảy
             if ((key === 'w' || key === ' ') && myRole && players[myRole].isGrounded) {
                 players[myRole].vy = jumpPower;
                 players[myRole].isGrounded = false;
             }
 
-            // Đánh thường (J)
             if (key === 'j' && myRole && !players[myRole].isAttacking) {
                 performAttack();
             }
 
-            // Skill Sharingan (E)
             if (key === 'e' && myRole === 'p1' && !sharinganSkill.active) {
                 triggerSharingan();
             }
         });
 
-        window.addEventListener('keyup', (e) => { 
-            let key = e.key.toLowerCase();
-            keys[key] = false; 
-        });
+        window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
         function performAttack() {
             let me = players[myRole];
@@ -214,14 +221,14 @@
 
             me.isAttacking = true;
 
-            // Kiểm tra khoảng cách đánh
             let attackRange = 90;
             let dist = Math.abs((me.x + me.size/2) - (enemy.x + enemy.size/2));
 
             if (dist <= attackRange) {
-                // Nếu đối thủ ĐANG BLOCK (K) thì không mất máu!
                 if (!enemy.isBlocking) {
                     enemy.hp = Math.max(0, enemy.hp - 1);
+                    enemy.hitTimer = 15; // Kích hoạt nháy đỏ
+                    enemy.x += me.direction * 15; // Giật nảy lùi lại
                 }
             }
 
@@ -235,6 +242,7 @@
             let enemy = players.p2;
             if (!enemy.isBlocking) {
                 enemy.hp = Math.max(0, enemy.hp - 1);
+                enemy.hitTimer = 20;
             }
 
             sharinganSkill.timer = setTimeout(() => {
@@ -245,17 +253,18 @@
         function updateGame() {
             if (myRole && players[myRole]) {
                 let p = players[myRole];
-
-                // Đang giữ K để Block
                 p.isBlocking = keys['k'] || false;
 
-                // Di chuyển & Lật mặt nhân vật
                 if (keys['a']) {
                     p.x = Math.max(0, p.x - 4);
-                    p.direction = -1; // Quay trái
+                    p.direction = -1;
+                    p.walkFrame += 0.25;
                 } else if (keys['d']) {
                     p.x = Math.min(canvas.width - p.size, p.x + 4);
-                    p.direction = 1;  // Quay phải
+                    p.direction = 1;
+                    p.walkFrame += 0.25;
+                } else {
+                    p.walkFrame = 0;
                 }
 
                 p.vy += gravity;
@@ -267,6 +276,8 @@
                     p.isGrounded = true;
                 }
 
+                if (p.hitTimer > 0) p.hitTimer--;
+
                 socket.emit('update_player', { role: myRole, data: p });
             }
 
@@ -276,9 +287,10 @@
                 }
             });
 
+            // SHARINGAN ĐÈ LÊN TRỰC TIẾP PLAYER 2
             if (sharinganSkill.active) {
-                sharinganSkill.x = players.p2.x + players.p2.size + 10;
-                sharinganSkill.y = players.p2.y + 10;
+                sharinganSkill.x = players.p2.x + (players.p2.size - 70) / 2;
+                sharinganSkill.y = players.p2.y - 30; // Nằm ngay trên đầu & đè một phần lên P2
             }
 
             drawGame();
@@ -286,7 +298,6 @@
         }
 
         function drawGame() {
-            // Nền trắng
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -296,18 +307,17 @@
             ctx.fillStyle = '#f39c12';
             ctx.fillRect(0, groundY + 5, canvas.width, canvas.height - groundY - 5);
 
-            // Vẽ Player 1 & 2
             if (players.p1.active) drawCharacter(players.p1, p1Img, '#6c5ce7', 'P1');
             if (players.p2.active) drawCharacter(players.p2, p2Img, '#e74c3c', 'P2');
 
-            // Vẽ Sharingan sau lưng P2
+            // SHARINGAN ĐÈ LÊN ĐẦU P2 (2s)
             if (sharinganSkill.active) {
                 if (sharinganImg.complete && sharinganImg.naturalWidth !== 0) {
-                    ctx.drawImage(sharinganImg, sharinganSkill.x, sharinganSkill.y, 60, 60);
+                    ctx.drawImage(sharinganImg, sharinganSkill.x, sharinganSkill.y, 70, 70);
                 } else {
                     ctx.fillStyle = 'red';
                     ctx.beginPath();
-                    ctx.arc(sharinganSkill.x + 30, sharinganSkill.y + 30, 25, 0, Math.PI * 2);
+                    ctx.arc(sharinganSkill.x + 35, sharinganSkill.y + 35, 30, 0, Math.PI * 2);
                     ctx.fill();
                 }
             }
@@ -324,14 +334,26 @@
             let centerX = p.x + p.size / 2;
             let centerY = p.y + p.size / 2;
 
-            ctx.translate(centerX, centerY);
+            // HIỆU ỨNG DI CHUYỂN CHÂN THẬT (Nhún nhảy + Nghiêng người)
+            let bounceY = 0;
+            let tiltAngle = 0;
+            if (p.walkFrame > 0 && p.isGrounded) {
+                bounceY = Math.sin(p.walkFrame * 2) * 5;
+                tiltAngle = Math.cos(p.walkFrame) * 0.1 * p.direction;
+            }
 
-            // Lật mặt nhân vật theo hướng di chuyển (Direction)
+            ctx.translate(centerX, centerY + bounceY);
+            ctx.rotate(tiltAngle);
+
             if (p.direction === -1) {
                 ctx.scale(-1, 1);
             }
 
-            // Vẽ ảnh nhân vật
+            // HIỆU ỨNG TRÚNG ĐÒN (Nháy màu đỏ)
+            if (p.hitTimer > 0) {
+                ctx.filter = 'brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)';
+            }
+
             if (img.complete && img.naturalWidth !== 0) {
                 ctx.drawImage(img, -p.size / 2, -p.size / 2, p.size, p.size);
             } else {
@@ -343,18 +365,26 @@
                 ctx.fillText(label, 0, 5);
             }
 
-            // Hiệu ứng ĐÁNH THƯỜNG (Vệt chém)
+            ctx.filter = 'none';
+
+            // HIỆU ỨNG ĐÁNH THƯỜNG XỊN (Vệt chém bán nguyệt phát sáng)
             if (p.isAttacking) {
                 ctx.beginPath();
-                ctx.strokeStyle = '#e67e22';
-                ctx.lineWidth = 6;
-                ctx.arc(0, 0, 50, -Math.PI / 4, Math.PI / 4);
+                ctx.strokeStyle = '#ff7675';
+                ctx.lineWidth = 8;
+                ctx.arc(15, 0, 45, -Math.PI / 3, Math.PI / 3);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.strokeStyle = '#ffeaa7';
+                ctx.lineWidth = 4;
+                ctx.arc(15, 0, 45, -Math.PI / 3, Math.PI / 3);
                 ctx.stroke();
             }
 
             ctx.restore();
 
-            // Hiệu ứng KHIÊN BLOCK (Bảo vệ)
+            // HIỆU ỨNG KHIÊN BLOCK
             if (p.isBlocking) {
                 ctx.fillStyle = 'rgba(52, 152, 219, 0.4)';
                 ctx.strokeStyle = '#2980b9';
