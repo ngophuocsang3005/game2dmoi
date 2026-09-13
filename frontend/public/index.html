@@ -164,7 +164,7 @@
             p2: { x: 370, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 5, active: true, direction: -1, isAttacking: false, isBlocking: false, hitTimer: 0, walkFrame: 0 }
         };
 
-        let sharinganSkill = { active: false, x: 0, y: 0, timer: null };
+        let sharinganSkill = { active: false, x: 0, y: 0, angle: 0, timer: null };
 
         function selectRole(role) {
             myRole = role;
@@ -181,15 +181,15 @@
         });
 
         function restartGame() {
-            players.p1.hp = 5; players.p1.x = 50; players.p1.y = groundY - 80;
-            players.p2.hp = 5; players.p2.x = 370; players.p2.y = groundY - 80;
+            players.p1.hp = 5; players.p1.x = 50; players.p1.y = groundY - 80; players.p1.hitTimer = 0;
+            players.p2.hp = 5; players.p2.x = 370; players.p2.y = groundY - 80; players.p2.hitTimer = 0;
             sharinganSkill.active = false;
             socket.emit('restart_game');
         }
 
         socket.on('game_restarted', () => {
-            players.p1.hp = 5; players.p1.x = 50; players.p1.y = groundY - 80;
-            players.p2.hp = 5; players.p2.x = 370; players.p2.y = groundY - 80;
+            players.p1.hp = 5; players.p1.x = 50; players.p1.y = groundY - 80; players.p1.hitTimer = 0;
+            players.p2.hp = 5; players.p2.x = 370; players.p2.y = groundY - 80; players.p2.hitTimer = 0;
             sharinganSkill.active = false;
         });
 
@@ -227,8 +227,8 @@
             if (dist <= attackRange) {
                 if (!enemy.isBlocking) {
                     enemy.hp = Math.max(0, enemy.hp - 1);
-                    enemy.hitTimer = 15; // Kích hoạt nháy đỏ
-                    enemy.x += me.direction * 15; // Giật nảy lùi lại
+                    enemy.hitTimer = 60; // Trúng đòn đỏ 1 giây (60 frames)
+                    enemy.x += me.direction * 15;
                 }
             }
 
@@ -237,12 +237,13 @@
 
         function triggerSharingan() {
             sharinganSkill.active = true;
+            sharinganSkill.angle = 0;
             if (sharinganSkill.timer) clearTimeout(sharinganSkill.timer);
 
             let enemy = players.p2;
             if (!enemy.isBlocking) {
                 enemy.hp = Math.max(0, enemy.hp - 1);
-                enemy.hitTimer = 20;
+                enemy.hitTimer = 60; // Trúng đòn đỏ 1 giây
             }
 
             sharinganSkill.timer = setTimeout(() => {
@@ -287,10 +288,11 @@
                 }
             });
 
-            // SHARINGAN ĐÈ LÊN TRỰC TIẾP PLAYER 2
+            // SHARINGAN XOAY THEO CHIỀU KIM ĐỒNG HỒ
             if (sharinganSkill.active) {
-                sharinganSkill.x = players.p2.x + (players.p2.size - 70) / 2;
-                sharinganSkill.y = players.p2.y - 30; // Nằm ngay trên đầu & đè một phần lên P2
+                sharinganSkill.x = players.p2.x + players.p2.size / 2;
+                sharinganSkill.y = players.p2.y + 10;
+                sharinganSkill.angle += 0.1; // Xoay liên tục theo chiều kim đồng hồ
             }
 
             drawGame();
@@ -310,16 +312,20 @@
             if (players.p1.active) drawCharacter(players.p1, p1Img, '#6c5ce7', 'P1');
             if (players.p2.active) drawCharacter(players.p2, p2Img, '#e74c3c', 'P2');
 
-            // SHARINGAN ĐÈ LÊN ĐẦU P2 (2s)
+            // VẼ SHARINGAN XOAY TRÊN ĐẦU P2
             if (sharinganSkill.active) {
+                ctx.save();
+                ctx.translate(sharinganSkill.x, sharinganSkill.y);
+                ctx.rotate(sharinganSkill.angle); // Xoay theo chiều kim đồng hồ
                 if (sharinganImg.complete && sharinganImg.naturalWidth !== 0) {
-                    ctx.drawImage(sharinganImg, sharinganSkill.x, sharinganSkill.y, 70, 70);
+                    ctx.drawImage(sharinganImg, -35, -35, 70, 70);
                 } else {
                     ctx.fillStyle = 'red';
                     ctx.beginPath();
-                    ctx.arc(sharinganSkill.x + 35, sharinganSkill.y + 35, 30, 0, Math.PI * 2);
+                    ctx.arc(0, 0, 30, 0, Math.PI * 2);
                     ctx.fill();
                 }
+                ctx.restore();
             }
 
             // Thanh máu
@@ -334,7 +340,6 @@
             let centerX = p.x + p.size / 2;
             let centerY = p.y + p.size / 2;
 
-            // HIỆU ỨNG DI CHUYỂN CHÂN THẬT (Nhún nhảy + Nghiêng người)
             let bounceY = 0;
             let tiltAngle = 0;
             if (p.walkFrame > 0 && p.isGrounded) {
@@ -349,7 +354,7 @@
                 ctx.scale(-1, 1);
             }
 
-            // HIỆU ỨNG TRÚNG ĐÒN (Nháy màu đỏ)
+            // TRÚNG ĐÒN ĐỎ ĐÚNG 1 GIÂY
             if (p.hitTimer > 0) {
                 ctx.filter = 'brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)';
             }
@@ -367,7 +372,7 @@
 
             ctx.filter = 'none';
 
-            // HIỆU ỨNG ĐÁNH THƯỜNG XỊN (Vệt chém bán nguyệt phát sáng)
+            // VỆT CHÉM ĐÁNH THƯỜNG
             if (p.isAttacking) {
                 ctx.beginPath();
                 ctx.strokeStyle = '#ff7675';
@@ -384,7 +389,7 @@
 
             ctx.restore();
 
-            // HIỆU ỨNG KHIÊN BLOCK
+            // KHIÊN BLOCK
             if (p.isBlocking) {
                 ctx.fillStyle = 'rgba(52, 152, 219, 0.4)';
                 ctx.strokeStyle = '#2980b9';
