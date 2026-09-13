@@ -3,76 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>App Chat & Game Wibu 2D - Itachi Skillset</title>
+    <title>Game Wibu 2D - Itachi</title>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; touch-action: manipulation; }
-        body { display: flex; justify-content: flex-start; align-items: center; min-height: 100vh; padding: 20px; background: url('anhnen1.jpg') no-repeat center center fixed; background-size: cover; position: relative; gap: 20px; }
-        body::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.35); z-index: 0; }
-        .chat-container { position: relative; z-index: 1; width: 320px; max-width: 100%; padding: 20px; background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(12px); border-radius: 18px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3); flex-shrink: 0; }
-        .chat-header { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid rgba(0, 0, 0, 0.08); }
-        .chat-icon { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #6c5ce7; }
-        .chat-header h2 { font-size: 1.2rem; color: #2d3436; }
-        #chat-box { width: 100%; height: 200px; border: 1px solid #e0e0e0; background: #ffffff; overflow-y: auto; padding: 12px; margin-bottom: 12px; border-radius: 12px; }
-        #chat-box p { margin-bottom: 8px; line-height: 1.4; color: #2d3436; word-wrap: break-word; }
-        .input-group { display: flex; flex-direction: column; gap: 8px; }
-        .input-row { display: flex; gap: 6px; }
-        input[type="text"] { padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; outline: none; font-size: 0.95rem; }
-        #usernameInput { width: 100%; } #messageInput { flex: 1; }
-        button { padding: 10px 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; user-select: none; }
-        button:active { transform: scale(0.96); }
-        .btn-send { background-color: #6c5ce7; color: white; }
-        .btn-clear { background-color: #ff4d4d; color: white; }
-        
-        .game-container { position: relative; z-index: 1; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(10px); padding: 15px; border-radius: 18px; border: 2px solid rgba(255, 255, 255, 0.3); display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .select-player-box { display: flex; gap: 10px; background: rgba(255, 255, 255, 0.2); padding: 8px 15px; border-radius: 12px; width: 100%; justify-content: center; align-items: center; }
-        .btn-select { background-color: #00b894; color: white; padding: 8px 14px; font-size: 0.85rem; }
-        .btn-active { background-color: #e67e22 !important; }
-        .btn-restart { background-color: #0984e3; color: white; padding: 8px 14px; font-size: 0.85rem; }
-        #gameCanvas { border-radius: 12px; display: block; border: 2px solid #ccc; background: #ffffff; max-width: 100%; height: auto; }
-        
-        /* Bảng nút điều khiển mobile */
-        .mobile-controls { display: flex; flex-direction: column; width: 100%; gap: 8px; margin-top: 5px; }
-        .control-row { display: flex; justify-content: space-between; width: 100%; gap: 10px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; touch-action: manipulation; }
+        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #2c3e50; gap: 20px; }
+        .game-container { position: relative; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .select-player-box { display: flex; gap: 10px; }
+        .btn-select { background: #00b894; color: #fff; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; }
+        .btn-active { background: #e67e22 !important; }
+        #gameCanvas { border-radius: 8px; background: #fff; display: block; }
+        .mobile-controls { display: flex; flex-direction: column; width: 100%; gap: 8px; }
+        .control-row { display: flex; justify-content: space-between; width: 100%; }
         .touch-group { display: flex; gap: 6px; }
-        .btn-touch { position: relative; width: 48px; height: 48px; border-radius: 50%; border: none; background: rgba(255, 255, 255, 0.25); color: white; font-size: 1.1rem; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); backdrop-filter: blur(5px); }
-        .btn-touch:active { background: rgba(255, 255, 255, 0.5); transform: scale(0.92); }
-        .btn-attack { background: rgba(231, 76, 60, 0.7); }
-        .btn-skill1 { background: rgba(230, 126, 34, 0.7); }
-        .btn-skill2 { background: rgba(155, 89, 182, 0.7); }
-        .btn-skill3 { background: rgba(241, 196, 15, 0.7); }
-        .btn-block { background: rgba(46, 204, 113, 0.7); }
-        
-        /* Lớp phủ Cooldown */
-        .cd-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 0.8rem; font-weight: bold; color: #fff; pointer-events: none; }
-
-        @media (min-width: 901px) { .mobile-controls { display: none; } }
-        @media (max-width: 900px) { body { flex-direction: column-reverse; justify-content: center; padding: 10px; } .chat-container { width: 100%; } .game-container { width: 100%; } }
+        .btn-touch { position: relative; width: 46px; height: 46px; border-radius: 50%; border: none; background: #555; color: #fff; font-size: 1rem; }
+        .cd-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 0.7rem; color: #fff; pointer-events: none; }
     </style>
 </head>
 <body>
-
-    <div class="chat-container">
-        <div class="chat-header">
-            <img src="icon.jpg" alt="Icon" class="chat-icon" onerror="this.src='https://via.placeholder.com/44'">
-            <h2>App chat wibu</h2>
-        </div>
-        <div id="chat-box"></div>
-        <div class="input-group">
-            <input type="text" id="usernameInput" placeholder="Tên của bạn...">
-            <div class="input-row">
-                <input type="text" id="messageInput" placeholder="Nhập tin nhắn...">
-                <button onclick="sendMessage()" class="btn-send">Gửi</button>
-                <button onclick="clearChat()" class="btn-clear">Xóa</button>
-            </div>
-        </div>
-    </div>
 
     <div class="game-container">
         <div class="select-player-box">
             <button id="btnP1" onclick="toggleRole('p1')" class="btn-select">Chọn Player 1</button>
             <button id="btnP2" onclick="toggleRole('p2')" class="btn-select">Chọn Player 2</button>
-            <button onclick="restartGame()" class="btn-restart">Chơi lại 🔄</button>
+            <button onclick="restartGame()" class="btn-select" style="background:#0984e3">Chơi lại 🔄</button>
         </div>
 
         <canvas id="gameCanvas" width="500" height="400"></canvas>
@@ -85,15 +39,15 @@
                     <button class="btn-touch" id="btnJump">▲</button>
                 </div>
                 <div class="touch-group">
-                    <button class="btn-touch btn-block" id="btnBlock">🛡️<span id="cdBlock" class="cd-overlay" style="display:none;"></span></button>
-                    <button class="btn-touch btn-attack" id="btnAttack">⚔️<span id="cdAttack" class="cd-overlay" style="display:none;"></span></button>
+                    <button class="btn-touch" id="btnBlock">🛡️<span id="cdBlock" class="cd-overlay" style="display:none;"></span></button>
+                    <button class="btn-touch" id="btnAttack">⚔️<span id="cdAttack" class="cd-overlay" style="display:none;"></span></button>
                 </div>
             </div>
             <div class="control-row" style="justify-content: flex-end;">
                 <div class="touch-group">
-                    <button class="btn-touch btn-skill1" id="btnSkill1">🗡️<span id="cdSkill1" class="cd-overlay" style="display:none;"></span></button>
-                    <button class="btn-touch btn-skill2" id="btnSkill2">👁️<span id="cdSkill2" class="cd-overlay" style="display:none;"></span></button>
-                    <button class="btn-touch btn-skill3" id="btnSkill3">👹<span id="cdSkill3" class="cd-overlay" style="display:none;"></span></button>
+                    <button class="btn-touch" id="btnSkill1">🗡️<span id="cdSkill1" class="cd-overlay" style="display:none;"></span></button>
+                    <button class="btn-touch" id="btnSkill2">👁️<span id="cdSkill2" class="cd-overlay" style="display:none;"></span></button>
+                    <button class="btn-touch" id="btnSkill3">👹<span id="cdSkill3" class="cd-overlay" style="display:none;"></span></button>
                 </div>
             </div>
         </div>
@@ -101,25 +55,6 @@
 
     <script>
         const socket = io('https://congamewibu.onrender.com');
-        const chatBox = document.getElementById('chat-box');
-
-        function addMessageToBox(data) {
-            const msgElement = document.createElement('p');
-            msgElement.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
-            chatBox.appendChild(msgElement);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function sendMessage() {
-            const u = document.getElementById('usernameInput').value.trim() || 'Wibu Ẩn Danh';
-            const m = document.getElementById('messageInput').value.trim();
-            if (m) { socket.emit('send_message', { username: u, message: m }); document.getElementById('messageInput').value = ''; }
-        }
-
-        socket.on('receive_message', (data) => addMessageToBox(data));
-        function clearChat() { if (confirm("Xóa chat?")) chatBox.innerHTML = ''; }
-
-        // --- GAME LOGIC ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -129,47 +64,32 @@
         const sharinganImg = new Image(); sharinganImg.src = 'sharingan1.jpg';
 
         const groundY = 320;
-        const gravity = 0.6;
-        const jumpPower = -12;
-
         let myRole = null;
         let isGameOver = false;
 
         let players = {
-            p1: { x: 50, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 5, active: false, direction: 1, isAttacking: false, isBlocking: false, hitTimer: 0, blockHits: 0, blockBreakTimer: 0 },
-            p2: { x: 370, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 5, active: false, direction: -1, isAttacking: false, isBlocking: false, hitTimer: 0, blockHits: 0, blockBreakTimer: 0 }
+            p1: { x: 50, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 5, direction: 1, isAttacking: false, isBlocking: false, hitTimer: 0, blockHits: 0, blockBreakTimer: 0 },
+            p2: { x: 370, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 5, direction: -1, isAttacking: false, isBlocking: false, hitTimer: 0, blockHits: 0, blockBreakTimer: 0 }
         };
 
         let projectiles = [];
-        let particles = []; // Hiệu ứng vỡ block
+        let particles = [];
+        let activeSharinganEffects = []; // Quản lý hiệu ứng Sharingan đè lên người
 
-        // Quản lý hồi chiêu (Cooldowns)
-        let cooldowns = { attack: 0, skill1: 0, skill2: 0, skill3: 0, block: 0 };
+        let cooldowns = { attack: 0, skill1: 0, skill2: 0, skill3: 0 };
+        let keyState = {}; // Tránh spam phím khi giữ phím
 
         socket.on('init_state', (data) => {
             if (data.gameState.p1) players.p1 = { ...players.p1, ...data.gameState.p1 };
             if (data.gameState.p2) players.p2 = { ...players.p2, ...data.gameState.p2 };
             projectiles = data.projectiles || [];
-            updateRoleButtonsUI();
         });
 
         function toggleRole(role) {
             myRole = (myRole === role) ? null : role;
             socket.emit('toggle_role', role);
-        }
-
-        socket.on('role_updated', (data) => {
-            players[data.role].active = data.active;
-            updateRoleButtonsUI();
-        });
-
-        function updateRoleButtonsUI() {
-            const btnP1 = document.getElementById('btnP1');
-            const btnP2 = document.getElementById('btnP2');
-            btnP1.innerText = myRole === 'p1' ? "Đang chọn P1 🟢" : "Chọn Player 1";
-            btnP1.className = myRole === 'p1' ? "btn-select btn-active" : "btn-select";
-            btnP2.innerText = myRole === 'p2' ? "Đang chọn P2 🟢" : "Chọn Player 2";
-            btnP2.className = myRole === 'p2' ? "btn-select btn-active" : "btn-select";
+            document.getElementById('btnP1').className = myRole === 'p1' ? 'btn-select btn-active' : 'btn-select';
+            document.getElementById('btnP2').className = myRole === 'p2' ? 'btn-select btn-active' : 'btn-select';
         }
 
         function restartGame() { socket.emit('restart_game'); }
@@ -180,93 +100,63 @@
             players.p2 = { ...players.p2, ...data.gameState.p2 };
             projectiles = [];
             particles = [];
+            activeSharinganEffects = [];
         });
 
-        // Xử lý nút bấm bàn phím
-        let keys = {};
+        // Bắt sự kiện phím
         window.addEventListener('keydown', (e) => {
             let key = e.key.toLowerCase();
-            keys[key] = true;
+            if (keyState[key]) return; // Ngăn kích hoạt liên tục khi đè giữ phím
+            keyState[key] = true;
+
             if (isGameOver || !myRole) return;
 
             if ((key === 'w' || key === ' ') && players[myRole].isGrounded) {
-                players[myRole].vy = jumpPower; players[myRole].isGrounded = false;
+                players[myRole].vy = -12; players[myRole].isGrounded = false;
             }
             if (key === 'j') performAttack();
             if (key === 'u') useSkill1();
             if (key === 'i') useSkill2();
-            if (key === 'o') useSkill3();
         });
 
-        window.addEventListener('keyup', (e) => { 
+        window.addEventListener('keyup', (e) => {
             let key = e.key.toLowerCase();
-            keys[key] = false; 
-            if (key === 'k' && myRole) {
-                // Nhả block thì reset đòn đỡ nếu chưa vỡ
-                if (players[myRole].blockBreakTimer === 0) players[myRole].blockHits = 0;
-            }
+            keyState[key] = false;
         });
 
-        // Nút Cảm Ứng Mobile
-        function bindTouch(btnId, action) {
-            const btn = document.getElementById(btnId);
-            btn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                if (!myRole || isGameOver) return;
-                action();
-            });
-        }
-
-        bindTouch('btnLeft', () => keys['a'] = true);
-        document.getElementById('btnLeft').addEventListener('touchend', () => keys['a'] = false);
-        bindTouch('btnRight', () => keys['d'] = true);
-        document.getElementById('btnRight').addEventListener('touchend', () => keys['d'] = false);
-        bindTouch('btnJump', () => { if (players[myRole].isGrounded) { players[myRole].vy = jumpPower; players[myRole].isGrounded = false; } });
-        bindTouch('btnAttack', performAttack);
-        bindTouch('btnSkill1', useSkill1);
-        bindTouch('btnSkill2', useSkill2);
-        bindTouch('btnSkill3', useSkill3);
-        
-        const btnBlock = document.getElementById('btnBlock');
-        btnBlock.addEventListener('touchstart', (e) => { e.preventDefault(); keys['k'] = true; });
-        btnBlock.addEventListener('touchend', (e) => { e.preventDefault(); keys['k'] = false; if (myRole && players[myRole].blockBreakTimer === 0) players[myRole].blockHits = 0; });
-
-        // --- CÁC KỸ NĂNG ---
         function performAttack() {
             if (cooldowns.attack > 0) return;
-            cooldowns.attack = 30; // 0.5s (30 frames)
+            cooldowns.attack = 30; // 0.5s
             socket.emit('attack', myRole);
         }
 
-        function useSkill1() { // Kunai
+        function useSkill1() {
             if (cooldowns.skill1 > 0) return;
-            cooldowns.skill1 = 120; // 2s (120 frames)
+            cooldowns.skill1 = 120; // 2s
             socket.emit('skill_kunai', myRole);
         }
 
-        function useSkill2() { // Sharingan
+        function useSkill2() {
             if (cooldowns.skill2 > 0) return;
-            cooldowns.skill2 = 180; // 3s (180 frames)
+            cooldowns.skill2 = 180; // 3s
             socket.emit('skill_sharingan', myRole);
         }
 
-        function useSkill3() { // Susanoo (Chưa làm chi tiết)
-            if (cooldowns.skill3 > 0) return;
-            cooldowns.skill3 = 300; // 5s
-        }
+        // Kích hoạt hiệu ứng Mắt Sharingan trúng địch
+        socket.on('trigger_sharingan_effect', (data) => {
+            activeSharinganEffects.push({
+                targetRole: data.targetRole,
+                timer: 45 // Hiện trong 0.75 giây
+            });
+        });
 
-        // Tạo hiệu ứng mảnh vỡ khiên
         socket.on('block_broken', (data) => {
             let p = players[data.role];
             for (let i = 0; i < 15; i++) {
                 particles.push({
-                    x: p.x + p.size / 2,
-                    y: p.y + p.size / 2,
-                    vx: (Math.random() - 0.5) * 10,
-                    vy: (Math.random() - 0.5) * 10,
-                    size: Math.random() * 6 + 3,
-                    life: 30,
-                    color: '#3498db'
+                    x: p.x + 40, y: p.y + 40,
+                    vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10,
+                    size: 6, life: 30, color: '#e74c3c'
                 });
             }
         });
@@ -279,42 +169,31 @@
         socket.on('projectiles_update', (data) => { projectiles = data; });
 
         function updateGame() {
-            // Giảm hồi chiêu
-            for (let key in cooldowns) {
-                if (cooldowns[key] > 0) cooldowns[key]--;
-                let el = document.getElementById('cd' + key.charAt(0).toUpperCase() + key.slice(1));
+            // Giảm Cooldown UI
+            for (let k in cooldowns) {
+                if (cooldowns[k] > 0) cooldowns[k]--;
+                let el = document.getElementById('cd' + k.charAt(0).toUpperCase() + k.slice(1));
                 if (el) {
-                    if (cooldowns[key] > 0) {
-                        el.style.display = 'flex';
-                        el.innerText = (cooldowns[key] / 60).toFixed(1) + 's';
-                    } else {
-                        el.style.display = 'none';
-                    }
+                    el.style.display = cooldowns[k] > 0 ? 'flex' : 'none';
+                    if (cooldowns[k] > 0) el.innerText = (cooldowns[k] / 60).toFixed(1) + 's';
                 }
             }
 
             if (!isGameOver && myRole && players[myRole]) {
                 let p = players[myRole];
+                if (p.blockBreakTimer > 0) { p.blockBreakTimer--; p.isBlocking = false; }
+                else { p.isBlocking = keyState['k'] || false; }
 
-                // Quản lý Block & Vỡ Block
-                if (p.blockBreakTimer > 0) {
-                    p.blockBreakTimer--;
-                    p.isBlocking = false;
-                    cooldowns.block = p.blockBreakTimer;
-                } else {
-                    p.isBlocking = keys['k'] || false;
-                }
+                if (keyState['a']) { p.x = Math.max(0, p.x - 4); p.direction = -1; }
+                else if (keyState['d']) { p.x = Math.min(canvas.width - p.size, p.x + 4); p.direction = 1; }
 
-                if (keys['a']) { p.x = Math.max(0, p.x - 4); p.direction = -1; }
-                else if (keys['d']) { p.x = Math.min(canvas.width - p.size, p.x + 4); p.direction = 1; }
-
-                p.vy += gravity; p.y += p.vy;
+                p.vy += 0.6; p.y += p.vy;
                 if (p.y + p.size >= groundY) { p.y = groundY - p.size; p.vy = 0; p.isGrounded = true; }
 
                 socket.emit('update_player', { role: myRole, data: p });
             }
 
-            // Xử lý di chuyển & Va chạm Projectile
+            // Di chuyển & Tính va chạm đạn
             projectiles.forEach((proj) => {
                 proj.x += proj.vx;
                 if (myRole && proj.owner !== myRole) {
@@ -326,16 +205,16 @@
                 }
             });
 
-            // Xử lý hiệu ứng Hạt (Particles)
-            particles.forEach((part, index) => {
-                part.x += part.vx;
-                part.y += part.vy;
-                part.life--;
-                if (part.life <= 0) particles.splice(index, 1);
+            // Giảm timer hiệu ứng Sharingan
+            activeSharinganEffects.forEach((eff, idx) => {
+                eff.timer--;
+                if (eff.timer <= 0) activeSharinganEffects.splice(idx, 1);
             });
 
-            if (players.p1.hitTimer > 0) players.p1.hitTimer--;
-            if (players.p2.hitTimer > 0) players.p2.hitTimer--;
+            particles.forEach((part, idx) => {
+                part.x += part.vx; part.y += part.vy; part.life--;
+                if (part.life <= 0) particles.splice(idx, 1);
+            });
 
             if (players.p1.hp <= 0 || players.p2.hp <= 0) isGameOver = true;
 
@@ -344,85 +223,76 @@
         }
 
         function drawGame() {
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // XÓA SẠCH CANVAS MỖI FRAME (Chống dính vết)
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // Vẽ sàn đấu
             ctx.fillStyle = '#8e44ad'; ctx.fillRect(0, groundY, canvas.width, 5);
             ctx.fillStyle = '#f39c12'; ctx.fillRect(0, groundY + 5, canvas.width, canvas.height - groundY - 5);
 
-            drawCharacter(players.p1, p1Img, '#6c5ce7', 'P1');
-            drawCharacter(players.p2, p2Img, '#e74c3c', 'P2');
+            drawCharacter(players.p1, p1Img, '#6c5ce7');
+            drawCharacter(players.p2, p2Img, '#e74c3c');
 
-            // Vẽ Projectiles (Kunai & Sharingan)
+            // Vẽ đạn độc lập
             projectiles.forEach((proj) => {
                 ctx.save();
                 ctx.translate(proj.x, proj.y);
                 if (proj.type === 'kunai') {
-                    if (kunaiImg.complete && kunaiImg.naturalWidth !== 0) {
+                    if (kunaiImg.complete && kunaiImg.naturalWidth > 0) {
                         ctx.drawImage(kunaiImg, -15, -15, 30, 30);
                     } else {
-                        ctx.fillStyle = '#2c3e50';
-                        ctx.fillRect(-10, -3, 20, 6);
+                        ctx.fillStyle = '#333'; ctx.fillRect(-10, -3, 20, 6);
                     }
                 } else if (proj.type === 'sharingan') {
-                    // Cục đỏ Sharingan
+                    // Cục đỏ Sharingan đơn lẻ
                     ctx.fillStyle = '#e74c3c';
-                    ctx.shadowColor = '#ff0000';
-                    ctx.shadowBlur = 12;
+                    ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
+                }
+                ctx.restore();
+            });
+
+            // Vẽ HIỆU ỨNG SHARINGAN HIỆN TRÊN ĐỊCH KHI TRÚNG ĐÒN
+            activeSharinganEffects.forEach((eff) => {
+                let victim = players[eff.targetRole];
+                ctx.save();
+                ctx.globalAlpha = eff.timer / 45; // Nhấp nháy mờ dần
+                if (sharinganImg.complete && sharinganImg.naturalWidth > 0) {
+                    ctx.drawImage(sharinganImg, victim.x - 10, victim.y - 10, victim.size + 20, victim.size + 20);
+                } else {
+                    ctx.fillStyle = 'rgba(231, 76, 60, 0.7)';
                     ctx.beginPath();
-                    ctx.arc(0, 0, 12, 0, Math.PI * 2);
+                    ctx.arc(victim.x + 40, victim.y + 40, 45, 0, Math.PI * 2);
                     ctx.fill();
                 }
                 ctx.restore();
             });
 
-            // Vẽ Hiệu ứng Vỡ Khiên
-            particles.forEach((part) => {
-                ctx.fillStyle = part.color;
-                ctx.fillRect(part.x, part.y, part.size, part.size);
-            });
+            // Mảnh vỡ khiên
+            particles.forEach(p => { ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size); });
 
-            // Thanh máu UI
-            ctx.fillStyle = '#2d3436';
-            ctx.font = 'bold 15px Arial';
-            ctx.fillText(`P1: ${'❤️'.repeat(players.p1.hp)}`, 15, 25);
-            ctx.fillText(`P2: ${'❤️'.repeat(players.p2.hp)}`, 360, 25);
-
-            if (isGameOver) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#ff4d4d'; ctx.font = 'bold 42px Arial'; ctx.textAlign = 'center';
-                ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 10);
-            }
+            // Máu
+            ctx.fillStyle = '#000'; ctx.font = 'bold 14px Arial';
+            ctx.fillText(`P1: ${'❤️'.repeat(players.p1.hp)}`, 10, 20);
+            ctx.fillText(`P2: ${'❤️'.repeat(players.p2.hp)}`, 370, 20);
         }
 
-        function drawCharacter(p, img, fallbackColor, label) {
+        function drawCharacter(p, img, color) {
             ctx.save();
-            let centerX = p.x + p.size / 2;
-            let centerY = p.y + p.size / 2;
-
-            ctx.translate(centerX, centerY);
+            ctx.translate(p.x + 40, p.y + 40);
             if (p.direction === -1) ctx.scale(-1, 1);
 
-            if (p.hitTimer > 0) ctx.filter = 'brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)';
-
-            if (img.complete && img.naturalWidth !== 0) {
-                ctx.drawImage(img, -p.size / 2, -p.size / 2, p.size, p.size);
+            if (img.complete && img.naturalWidth > 0) {
+                ctx.drawImage(img, -40, -40, 80, 80);
             } else {
-                ctx.fillStyle = fallbackColor;
-                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                ctx.fillStyle = color; ctx.fillRect(-40, -40, 80, 80);
             }
             ctx.restore();
 
-            // Hiệu ứng Đỡ Đòn / Khiên
-            if (p.isBlocking && p.blockBreakTimer === 0 && !isGameOver) {
-                ctx.fillStyle = p.blockHits === 1 ? 'rgba(241, 196, 15, 0.4)' : 'rgba(52, 152, 219, 0.4)';
-                ctx.strokeStyle = p.blockHits === 1 ? '#f39c12' : '#2980b9';
+            // Vòng bảo vệ Block
+            if (p.isBlocking && p.blockBreakTimer === 0) {
+                ctx.strokeStyle = p.blockHits === 1 ? '#f39c12' : '#3498db';
                 ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, p.size / 1.7, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
+                ctx.beginPath(); ctx.arc(p.x + 40, p.y + 40, 45, 0, Math.PI * 2); ctx.stroke();
             }
         }
 
