@@ -22,12 +22,13 @@
         #usernameInput { width: 100%; } #messageInput { flex: 1; }
         button { padding: 10px 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; user-select: none; }
         button:active { transform: scale(0.96); }
-        button:disabled { background-color: #b2bec3 !important; cursor: not-allowed; }
+        button:disabled { background-color: #b2bec3 !important; cursor: not-allowed; opacity: 0.6; }
         .btn-send { background-color: #6c5ce7; color: white; }
         .btn-clear { background-color: #ff4d4d; color: white; }
         .game-container { position: relative; z-index: 1; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(10px); padding: 15px; border-radius: 18px; border: 2px solid rgba(255, 255, 255, 0.3); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; align-items: center; gap: 10px; }
         .select-player-box { display: flex; gap: 10px; background: rgba(255, 255, 255, 0.2); padding: 8px 15px; border-radius: 12px; width: 100%; justify-content: center; align-items: center; }
         .btn-select { background-color: #00b894; color: white; padding: 8px 14px; font-size: 0.85rem; }
+        .btn-cancel { background-color: #d63031 !important; color: white; }
         .btn-restart { background-color: #e67e22; color: white; padding: 8px 14px; font-size: 0.85rem; }
         #gameCanvas { border-radius: 12px; display: block; border: 2px solid #ccc; background: #ffffff; max-width: 100%; height: auto; }
         .mobile-controls { display: flex; justify-content: space-between; width: 100%; margin-top: 10px; gap: 10px; }
@@ -61,8 +62,8 @@
 
     <div class="game-container">
         <div class="select-player-box">
-            <button id="btnP1" onclick="selectRole('p1')" class="btn-select">Chọn Player 1</button>
-            <button id="btnP2" onclick="selectRole('p2')" class="btn-select">Chọn Player 2</button>
+            <button id="btnP1" onclick="toggleRole('p1')" class="btn-select">Chọn Player 1</button>
+            <button id="btnP2" onclick="toggleRole('p2')" class="btn-select">Chọn Player 2</button>
             <button onclick="restartGame()" class="btn-restart">Chơi lại 🔄</button>
         </div>
 
@@ -144,23 +145,73 @@
         };
 
         let sharinganSkill = { active: false, x: 0, y: 0, angle: 0 };
+        let handSkill = { active: false, x: 0, y: 0 };
 
         socket.on('init_state', (data) => {
             if (data.gameState.p1) players.p1 = { ...players.p1, ...data.gameState.p1 };
             if (data.gameState.p2) players.p2 = { ...players.p2, ...data.gameState.p2 };
-            sharinganSkill = data.sharinganSkill || sharinganSkill;
+            updateRoleButtonsUI();
         });
 
-        function selectRole(role) {
-            myRole = role;
-            socket.emit('select_role', role);
+        function toggleRole(role) {
+            // Nếu chưa chọn role nào HOẶC bấm đúng vào role mình đang chọn để HỦY
+            if (myRole === null || myRole === role) {
+                socket.emit('toggle_role', role);
+            }
         }
 
-        socket.on('role_selected', (data) => {
-            players[data.role].active = true;
-            if (myRole === 'p1') document.getElementById('btnP1').disabled = true;
-            if (myRole === 'p2') document.getElementById('btnP2').disabled = true;
+        socket.on('role_updated', (data) => {
+            players[data.role].active = data.active;
+
+            if (data.active) {
+                // Nếu mình là người kích hoạt chọn
+                if (myRole === null) myRole = data.role;
+            } else {
+                // Nếu hủy chọn
+                if (myRole === data.role) myRole = null;
+            }
+
+            updateRoleButtonsUI();
         });
+
+        function updateRoleButtonsUI() {
+            const btnP1 = document.getElementById('btnP1');
+            const btnP2 = document.getElementById('btnP2');
+
+            // Cập nhật giao diện Nút P1
+            if (players.p1.active) {
+                if (myRole === 'p1') {
+                    btnP1.innerText = "Hủy chọn P1 ❌";
+                    btnP1.className = "btn-select btn-cancel";
+                    btnP1.disabled = false;
+                } else {
+                    btnP1.innerText = "P1 (Đã chọn)";
+                    btnP1.className = "btn-select";
+                    btnP1.disabled = true;
+                }
+            } else {
+                btnP1.innerText = "Chọn Player 1";
+                btnP1.className = "btn-select";
+                btnP1.disabled = (myRole === 'p2'); // Khóa nút nếu đang chọn P2
+            }
+
+            // Cập nhật giao diện Nút P2
+            if (players.p2.active) {
+                if (myRole === 'p2') {
+                    btnP2.innerText = "Hủy chọn P2 ❌";
+                    btnP2.className = "btn-select btn-cancel";
+                    btnP2.disabled = false;
+                } else {
+                    btnP2.innerText = "P2 (Đã chọn)";
+                    btnP2.className = "btn-select";
+                    btnP2.disabled = true;
+                }
+            } else {
+                btnP2.innerText = "Chọn Player 2";
+                btnP2.className = "btn-select";
+                btnP2.disabled = (myRole === 'p1'); // Khóa nút nếu đang chọn P1
+            }
+        }
 
         function restartGame() {
             socket.emit('restart_game');
@@ -171,6 +222,7 @@
             players.p1 = { ...players.p1, ...data.gameState.p1 };
             players.p2 = { ...players.p2, ...data.gameState.p2 };
             sharinganSkill.active = false;
+            handSkill.active = false;
         });
 
         let keys = {};
@@ -184,7 +236,7 @@
                 players[myRole].isGrounded = false;
             }
             if (key === 'j' && !players[myRole].isAttacking) performAttack();
-            if (key === 'e' && myRole === 'p1' && !sharinganSkill.active) triggerSharingan();
+            if (key === 'e') triggerSpecialSkill();
         });
 
         window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
@@ -201,7 +253,7 @@
                     players[myRole].isGrounded = false;
                 }
                 if (keyName === 'j' && !players[myRole].isAttacking) performAttack();
-                if (keyName === 'e' && myRole === 'p1' && !sharinganSkill.active) triggerSharingan();
+                if (keyName === 'e') triggerSpecialSkill();
             });
             btn.addEventListener('touchend', (e) => {
                 e.preventDefault();
@@ -220,8 +272,12 @@
             socket.emit('attack', myRole);
         }
 
-        function triggerSharingan() {
-            socket.emit('trigger_sharingan');
+        function triggerSpecialSkill() {
+            if (myRole === 'p1' && !sharinganSkill.active) {
+                socket.emit('trigger_sharingan');
+            } else if (myRole === 'p2' && !handSkill.active) {
+                socket.emit('trigger_hand_skill');
+            }
         }
 
         socket.on('game_state_sync', (data) => {
@@ -236,6 +292,7 @@
             }
         });
 
+        // LẮNG NGHE SKILL P1 (SHARINGAN)
         socket.on('sharingan_activated', (data) => {
             sharinganSkill.active = true;
             if (data.gameState) {
@@ -244,10 +301,18 @@
                 players.p2.hitTimer = data.gameState.p2.hitTimer;
             }
         });
+        socket.on('sharingan_deactivated', () => { sharinganSkill.active = false; });
 
-        socket.on('sharingan_deactivated', () => {
-            sharinganSkill.active = false;
+        // LẮNG NGHE SKILL P2 (BÀN TAY)
+        socket.on('hand_skill_activated', (data) => {
+            handSkill.active = true;
+            if (data.gameState) {
+                players.p1.hp = data.gameState.p1.hp;
+                players.p2.hp = data.gameState.p2.hp;
+                players.p1.hitTimer = data.gameState.p1.hitTimer;
+            }
         });
+        socket.on('hand_skill_deactivated', () => { handSkill.active = false; });
 
         socket.on('player_updated', (data) => {
             if (data.role !== myRole) {
@@ -284,7 +349,6 @@
                 socket.emit('update_player', { role: myRole, data: p });
             }
 
-            // Trừ giật chớp đỏ hiệu ứng mất máu
             if (players.p1.hitTimer > 0) players.p1.hitTimer--;
             if (players.p2.hitTimer > 0) players.p2.hitTimer--;
 
@@ -292,10 +356,17 @@
                 isGameOver = true;
             }
 
+            // Vị trí Skill P1 (Sharingan) trên P2
             if (sharinganSkill.active) {
                 sharinganSkill.x = players.p2.x + players.p2.size / 2;
                 sharinganSkill.y = players.p2.y + 10;
                 sharinganSkill.angle += 0.1;
+            }
+
+            // Vị trí Skill P2 (Bàn tay) trên đầu P1
+            if (handSkill.active) {
+                handSkill.x = players.p1.x + players.p1.size / 2;
+                handSkill.y = players.p1.y - 40; // Xuất hiện trên đầu P1
             }
 
             drawGame();
@@ -314,7 +385,7 @@
             drawCharacter(players.p1, p1Img, '#6c5ce7', 'P1');
             drawCharacter(players.p2, p2Img, '#e74c3c', 'P2');
 
-            // HIỂN THỊ SKILL SHARINGAN TRÊN CẢ ĐIỆN THOẠI & PC
+            // VẼ HIỆU ỨNG SKILL SHARINGAN (P1)
             if (sharinganSkill.active && !isGameOver) {
                 ctx.save();
                 ctx.translate(sharinganSkill.x, sharinganSkill.y);
@@ -323,10 +394,24 @@
                     ctx.drawImage(sharinganImg, -35, -35, 70, 70);
                 } else {
                     ctx.fillStyle = 'red';
-                    ctx.beginPath();
-                    ctx.arc(0, 0, 30, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI * 2); ctx.fill();
                 }
+                ctx.restore();
+            }
+
+            // VẼ HIỆU ỨNG SKILL BÀN TAY KHỐNG CHẾ (P2)
+            if (handSkill.active && !isGameOver) {
+                ctx.save();
+                ctx.translate(handSkill.x, handSkill.y);
+                
+                // Vẽ hiệu ứng bàn tay/nắm đấm đập xuống
+                ctx.font = '55px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = '#e74c3c';
+                ctx.shadowBlur = 15;
+                ctx.fillText('🖐️', 0, 0);
+
                 ctx.restore();
             }
 
@@ -364,7 +449,6 @@
                 tiltAngle = Math.cos(p.walkFrame) * 0.1 * p.direction;
             }
 
-            // HIỆU ỨNG GIẬT RUNG VÀ CHỚP ĐỎ KHI TRỪ MÁU
             let hitShakeX = (p.hitTimer > 0) ? Math.sin(p.hitTimer * 0.5) * 4 : 0;
 
             ctx.translate(centerX + hitShakeX, centerY + bounceY);
@@ -372,7 +456,6 @@
 
             if (p.direction === -1) ctx.scale(-1, 1);
             
-            // Lọc màu chớp đỏ khi trúng đòn
             if (p.hitTimer > 0) {
                 ctx.filter = 'brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)';
             }
@@ -390,7 +473,6 @@
 
             ctx.filter = 'none';
 
-            // VỆT CẢM ỨNG ĐÁNH THƯỜNG
             if (p.isAttacking) {
                 ctx.beginPath();
                 ctx.strokeStyle = '#ff7675';
@@ -401,7 +483,6 @@
 
             ctx.restore();
 
-            // KHIÊN BẢO VỆ
             if (p.isBlocking && !isGameOver) {
                 ctx.fillStyle = 'rgba(52, 152, 219, 0.4)';
                 ctx.strokeStyle = '#2980b9';

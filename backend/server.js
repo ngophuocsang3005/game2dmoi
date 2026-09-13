@@ -16,24 +16,27 @@ let gameState = {
     p2: { x: 370, y: 240, hp: 5, active: false, isAttacking: false, isBlocking: false, direction: -1, hitTimer: 0 }
 };
 
-let sharinganSkill = { active: false, x: 0, y: 0, angle: 0 };
+let sharinganSkill = { active: false, x: 0, y: 0, angle: 0 }; // Skill P1
+let handSkill = { active: false, x: 0, y: 0, scale: 1 };        // Skill P2 (Bàn tay)
 
 io.on('connection', (socket) => {
-    // Gửi trạng thái ban đầu khi kết nối
-    socket.emit('init_state', { gameState, sharinganSkill });
+    // Gửi trạng thái ban đầu cho người mới vào
+    socket.emit('init_state', { gameState, sharinganSkill, handSkill });
 
     socket.on('send_message', (data) => {
         io.emit('receive_message', data);
     });
 
-    socket.on('select_role', (role) => {
+    // Chọn / Hủy Chọn Role
+    socket.on('toggle_role', (role) => {
         if (gameState[role]) {
-            gameState[role].active = true;
-            io.emit('role_selected', { role, gameState });
+            // Đảo ngược trạng thái chọn
+            gameState[role].active = !gameState[role].active;
+            io.emit('role_updated', { role, active: gameState[role].active, gameState });
         }
     });
 
-    // Cập nhật di chuyển
+    // Cập nhật vị trí di chuyển
     socket.on('update_player', (data) => {
         if (data.role && gameState[data.role]) {
             gameState[data.role] = { ...gameState[data.role], ...data.data };
@@ -52,7 +55,7 @@ io.on('connection', (socket) => {
         let dist = Math.abs((attacker.x + 40) - (defender.x + 40));
         if (dist <= 90 && !defender.isBlocking) {
             defender.hp = Math.max(0, defender.hp - 1);
-            defender.hitTimer = 30; // Tạo hiệu ứng giật chớp đỏ
+            defender.hitTimer = 30; // Tạo hiệu ứng rung giật chớp đỏ
             defender.x += attacker.direction * 15;
         }
 
@@ -64,7 +67,7 @@ io.on('connection', (socket) => {
         }, 250);
     });
 
-    // XỬ LÝ SKILL SHARINGAN
+    // XỬ LÝ SKILL P1 (SHARINGAN)
     socket.on('trigger_sharingan', () => {
         sharinganSkill.active = true;
         let defender = gameState.p2;
@@ -82,12 +85,31 @@ io.on('connection', (socket) => {
         }, 2000);
     });
 
+    // XỬ LÝ SKILL P2 (BÀN TAY TRÊN ĐẦU P1)
+    socket.on('trigger_hand_skill', () => {
+        handSkill.active = true;
+        let defender = gameState.p1;
+
+        if (!defender.isBlocking) {
+            defender.hp = Math.max(0, defender.hp - 1);
+            defender.hitTimer = 30;
+        }
+
+        io.emit('hand_skill_activated', { gameState, handSkill });
+
+        setTimeout(() => {
+            handSkill.active = false;
+            io.emit('hand_skill_deactivated', { handSkill });
+        }, 1500);
+    });
+
     // RESTART GAME
     socket.on('restart_game', () => {
         gameState.p1 = { x: 50, y: 240, hp: 5, active: gameState.p1.active, isAttacking: false, isBlocking: false, direction: 1, hitTimer: 0 };
         gameState.p2 = { x: 370, y: 240, hp: 5, active: gameState.p2.active, isAttacking: false, isBlocking: false, direction: -1, hitTimer: 0 };
         sharinganSkill.active = false;
-        io.emit('game_restarted', { gameState, sharinganSkill });
+        handSkill.active = false;
+        io.emit('game_restarted', { gameState, sharinganSkill, handSkill });
     });
 });
 
