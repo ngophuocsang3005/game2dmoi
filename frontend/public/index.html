@@ -143,11 +143,12 @@
             p2: { x: 370, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 5, active: false, direction: -1, isAttacking: false, isBlocking: false, hitTimer: 0, walkFrame: 0 }
         };
 
-        let sharinganSkill = { active: false, x: 0, y: 0, angle: 0, timer: null };
+        let sharinganSkill = { active: false, x: 0, y: 0, angle: 0 };
 
-        socket.on('init_state', (state) => {
-            if (state.p1) players.p1 = { ...players.p1, ...state.p1 };
-            if (state.p2) players.p2 = { ...players.p2, ...state.p2 };
+        socket.on('init_state', (data) => {
+            if (data.gameState.p1) players.p1 = { ...players.p1, ...data.gameState.p1 };
+            if (data.gameState.p2) players.p2 = { ...players.p2, ...data.gameState.p2 };
+            sharinganSkill = data.sharinganSkill || sharinganSkill;
         });
 
         function selectRole(role) {
@@ -157,21 +158,18 @@
 
         socket.on('role_selected', (data) => {
             players[data.role].active = true;
-            if (myRole === 'p1') {
-                document.getElementById('btnP1').disabled = true;
-            } else if (myRole === 'p2') {
-                document.getElementById('btnP2').disabled = true;
-            }
+            if (myRole === 'p1') document.getElementById('btnP1').disabled = true;
+            if (myRole === 'p2') document.getElementById('btnP2').disabled = true;
         });
 
         function restartGame() {
             socket.emit('restart_game');
         }
 
-        socket.on('game_restarted', (state) => {
+        socket.on('game_restarted', (data) => {
             isGameOver = false;
-            players.p1 = { ...players.p1, ...state.p1, hp: 5, x: 50, y: groundY - 80 };
-            players.p2 = { ...players.p2, ...state.p2, hp: 5, x: 370, y: groundY - 80 };
+            players.p1 = { ...players.p1, ...data.gameState.p1 };
+            players.p2 = { ...players.p2, ...data.gameState.p2 };
             sharinganSkill.active = false;
         });
 
@@ -197,6 +195,7 @@
                 e.preventDefault();
                 keys[keyName] = true;
                 if (!myRole || isGameOver) return;
+
                 if (keyName === 'w' && players[myRole].isGrounded) {
                     players[myRole].vy = jumpPower;
                     players[myRole].isGrounded = false;
@@ -218,36 +217,37 @@
         setupTouchBtn('btnE', 'e');
 
         function performAttack() {
-            let me = players[myRole];
-            let enemyRole = (myRole === 'p1') ? 'p2' : 'p1';
-            let enemy = players[enemyRole];
-
-            me.isAttacking = true;
-            let attackRange = 90;
-            let dist = Math.abs((me.x + me.size/2) - (enemy.x + enemy.size/2));
-
-            if (dist <= attackRange && !enemy.isBlocking) {
-                enemy.hp = Math.max(0, enemy.hp - 1);
-                enemy.hitTimer = 30;
-                enemy.x += me.direction * 15;
-            }
-
-            setTimeout(() => { me.isAttacking = false; }, 250);
+            socket.emit('attack', myRole);
         }
 
         function triggerSharingan() {
-            sharinganSkill.active = true;
-            sharinganSkill.angle = 0;
-            if (sharinganSkill.timer) clearTimeout(sharinganSkill.timer);
-
-            let enemy = players.p2;
-            if (!enemy.isBlocking) {
-                enemy.hp = Math.max(0, enemy.hp - 1);
-                enemy.hitTimer = 30;
-            }
-
-            sharinganSkill.timer = setTimeout(() => { sharinganSkill.active = false; }, 2000);
+            socket.emit('trigger_sharingan');
         }
+
+        socket.on('game_state_sync', (data) => {
+            if (data.gameState.p1) players.p1.hp = data.gameState.p1.hp;
+            if (data.gameState.p2) players.p2.hp = data.gameState.p2.hp;
+            if (data.gameState.p1) players.p1.hitTimer = data.gameState.p1.hitTimer;
+            if (data.gameState.p2) players.p2.hitTimer = data.gameState.p2.hitTimer;
+
+            if (data.attackerRole) {
+                players[data.attackerRole].isAttacking = true;
+                setTimeout(() => { players[data.attackerRole].isAttacking = false; }, 250);
+            }
+        });
+
+        socket.on('sharingan_activated', (data) => {
+            sharinganSkill.active = true;
+            if (data.gameState) {
+                players.p1.hp = data.gameState.p1.hp;
+                players.p2.hp = data.gameState.p2.hp;
+                players.p2.hitTimer = data.gameState.p2.hitTimer;
+            }
+        });
+
+        socket.on('sharingan_deactivated', () => {
+            sharinganSkill.active = false;
+        });
 
         socket.on('player_updated', (data) => {
             if (data.role !== myRole) {
@@ -281,11 +281,12 @@
                     p.isGrounded = true;
                 }
 
-                if (p.hitTimer > 0) p.hitTimer--;
-
-                // Gửi dữ liệu vị trí lên Server
                 socket.emit('update_player', { role: myRole, data: p });
             }
+
+            // Trừ giật chớp đỏ hiệu ứng mất máu
+            if (players.p1.hitTimer > 0) players.p1.hitTimer--;
+            if (players.p2.hitTimer > 0) players.p2.hitTimer--;
 
             if (players.p1.hp <= 0 || players.p2.hp <= 0) {
                 isGameOver = true;
@@ -313,6 +314,7 @@
             drawCharacter(players.p1, p1Img, '#6c5ce7', 'P1');
             drawCharacter(players.p2, p2Img, '#e74c3c', 'P2');
 
+            // HIỂN THỊ SKILL SHARINGAN TRÊN CẢ ĐIỆN THOẠI & PC
             if (sharinganSkill.active && !isGameOver) {
                 ctx.save();
                 ctx.translate(sharinganSkill.x, sharinganSkill.y);
@@ -328,6 +330,7 @@
                 ctx.restore();
             }
 
+            // THANH MÁU
             ctx.fillStyle = '#2d3436';
             ctx.font = 'bold 15px Arial';
             ctx.fillText(`P1: ${'❤️'.repeat(players.p1.hp)}`, 15, 25);
@@ -361,13 +364,18 @@
                 tiltAngle = Math.cos(p.walkFrame) * 0.1 * p.direction;
             }
 
-            let hitShakeX = (p.hitTimer > 0) ? Math.sin(p.hitTimer * 0.5) * 3 : 0;
+            // HIỆU ỨNG GIẬT RUNG VÀ CHỚP ĐỎ KHI TRỪ MÁU
+            let hitShakeX = (p.hitTimer > 0) ? Math.sin(p.hitTimer * 0.5) * 4 : 0;
 
             ctx.translate(centerX + hitShakeX, centerY + bounceY);
             ctx.rotate(tiltAngle);
 
             if (p.direction === -1) ctx.scale(-1, 1);
-            if (p.hitTimer > 0) ctx.filter = 'brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)';
+            
+            // Lọc màu chớp đỏ khi trúng đòn
+            if (p.hitTimer > 0) {
+                ctx.filter = 'brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)';
+            }
 
             if (img.complete && img.naturalWidth !== 0) {
                 ctx.drawImage(img, -p.size / 2, -p.size / 2, p.size, p.size);
@@ -382,6 +390,7 @@
 
             ctx.filter = 'none';
 
+            // VỆT CẢM ỨNG ĐÁNH THƯỜNG
             if (p.isAttacking) {
                 ctx.beginPath();
                 ctx.strokeStyle = '#ff7675';
@@ -392,6 +401,7 @@
 
             ctx.restore();
 
+            // KHIÊN BẢO VỆ
             if (p.isBlocking && !isGameOver) {
                 ctx.fillStyle = 'rgba(52, 152, 219, 0.4)';
                 ctx.strokeStyle = '#2980b9';

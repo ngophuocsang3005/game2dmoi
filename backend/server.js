@@ -8,30 +8,24 @@ app.use(cors());
 
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-    }
+    cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
-// Trạng thái game chung
 let gameState = {
-    p1: { x: 50, y: 240, hp: 5, active: false, isAttacking: false, isBlocking: false, direction: 1 },
-    p2: { x: 370, y: 240, hp: 5, active: false, isAttacking: false, isBlocking: false, direction: -1 }
+    p1: { x: 50, y: 240, hp: 5, active: false, isAttacking: false, isBlocking: false, direction: 1, hitTimer: 0 },
+    p2: { x: 370, y: 240, hp: 5, active: false, isAttacking: false, isBlocking: false, direction: -1, hitTimer: 0 }
 };
 
+let sharinganSkill = { active: false, x: 0, y: 0, angle: 0 };
+
 io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
+    // Gửi trạng thái ban đầu khi kết nối
+    socket.emit('init_state', { gameState, sharinganSkill });
 
-    // Gửi trạng thái hiện tại cho người mới vào
-    socket.emit('init_state', gameState);
-
-    // Nhận chat từ client và gửi cho tất cả
     socket.on('send_message', (data) => {
         io.emit('receive_message', data);
     });
 
-    // Chọn Role (Player 1 hoặc Player 2)
     socket.on('select_role', (role) => {
         if (gameState[role]) {
             gameState[role].active = true;
@@ -39,24 +33,61 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Cập nhật vị trí & hành động liên tục
+    // Cập nhật di chuyển
     socket.on('update_player', (data) => {
         if (data.role && gameState[data.role]) {
             gameState[data.role] = { ...gameState[data.role], ...data.data };
-            // Phát vị trí mới tới TẤT CẢ người chơi khác
             socket.broadcast.emit('player_updated', data);
         }
     });
 
-    // Reset Game
-    socket.on('restart_game', () => {
-        gameState.p1 = { x: 50, y: 240, hp: 5, active: gameState.p1.active, isAttacking: false, isBlocking: false, direction: 1 };
-        gameState.p2 = { x: 370, y: 240, hp: 5, active: gameState.p2.active, isAttacking: false, isBlocking: false, direction: -1 };
-        io.emit('game_restarted', gameState);
+    // XỬ LÝ ĐÁNH THƯỜNG
+    socket.on('attack', (attackerRole) => {
+        let defenderRole = (attackerRole === 'p1') ? 'p2' : 'p1';
+        let attacker = gameState[attackerRole];
+        let defender = gameState[defenderRole];
+
+        attacker.isAttacking = true;
+        
+        let dist = Math.abs((attacker.x + 40) - (defender.x + 40));
+        if (dist <= 90 && !defender.isBlocking) {
+            defender.hp = Math.max(0, defender.hp - 1);
+            defender.hitTimer = 30; // Tạo hiệu ứng giật chớp đỏ
+            defender.x += attacker.direction * 15;
+        }
+
+        io.emit('game_state_sync', { gameState, attackerRole });
+
+        setTimeout(() => {
+            attacker.isAttacking = false;
+            io.emit('game_state_sync', { gameState });
+        }, 250);
     });
 
-    socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
+    // XỬ LÝ SKILL SHARINGAN
+    socket.on('trigger_sharingan', () => {
+        sharinganSkill.active = true;
+        let defender = gameState.p2;
+
+        if (!defender.isBlocking) {
+            defender.hp = Math.max(0, defender.hp - 1);
+            defender.hitTimer = 30;
+        }
+
+        io.emit('sharingan_activated', { gameState, sharinganSkill });
+
+        setTimeout(() => {
+            sharinganSkill.active = false;
+            io.emit('sharingan_deactivated', { sharinganSkill });
+        }, 2000);
+    });
+
+    // RESTART GAME
+    socket.on('restart_game', () => {
+        gameState.p1 = { x: 50, y: 240, hp: 5, active: gameState.p1.active, isAttacking: false, isBlocking: false, direction: 1, hitTimer: 0 };
+        gameState.p2 = { x: 370, y: 240, hp: 5, active: gameState.p2.active, isAttacking: false, isBlocking: false, direction: -1, hitTimer: 0 };
+        sharinganSkill.active = false;
+        io.emit('game_restarted', { gameState, sharinganSkill });
     });
 });
 
