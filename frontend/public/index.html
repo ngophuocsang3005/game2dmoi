@@ -2,71 +2,43 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>App Chat & Game Wibu 2D</title>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-
-        body {
-            display: flex; justify-content: flex-start; align-items: center;
-            min-height: 100vh; padding: 20px;
-            background: url('anhnen1.jpg') no-repeat center center fixed;
-            background-size: cover; position: relative; gap: 20px;
-        }
-
-        body::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.35); z-index: 0;
-        }
-
-        /* KHUNG CHAT */
-        .chat-container {
-            position: relative; z-index: 1; width: 340px; max-width: 100%; padding: 20px;
-            background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(12px);
-            border-radius: 18px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.5); flex-shrink: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; touch-action: manipulation; }
+        body { display: flex; justify-content: flex-start; align-items: center; min-height: 100vh; padding: 20px; background: url('anhnen1.jpg') no-repeat center center fixed; background-size: cover; position: relative; gap: 20px; }
+        body::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.35); z-index: 0; }
+        .chat-container { position: relative; z-index: 1; width: 340px; max-width: 100%; padding: 20px; background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(12px); border-radius: 18px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.5); flex-shrink: 0; }
         .chat-header { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid rgba(0, 0, 0, 0.08); }
         .chat-icon { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #6c5ce7; }
         .chat-header h2 { font-size: 1.2rem; color: #2d3436; }
-
-        #chat-box { width: 100%; height: 280px; border: 1px solid #e0e0e0; background: #ffffff; overflow-y: auto; padding: 12px; margin-bottom: 12px; border-radius: 12px; }
+        #chat-box { width: 100%; height: 200px; border: 1px solid #e0e0e0; background: #ffffff; overflow-y: auto; padding: 12px; margin-bottom: 12px; border-radius: 12px; }
         #chat-box p { margin-bottom: 8px; line-height: 1.4; color: #2d3436; word-wrap: break-word; }
         #chat-box p strong { color: #6c5ce7; }
-
         .input-group { display: flex; flex-direction: column; gap: 8px; }
         .input-row { display: flex; gap: 6px; }
         input[type="text"] { padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; outline: none; font-size: 0.95rem; }
         #usernameInput { width: 100%; } #messageInput { flex: 1; }
-
-        button { padding: 10px 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        button { padding: 10px 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; user-select: none; }
         button:active { transform: scale(0.96); }
         button:disabled { background-color: #b2bec3 !important; cursor: not-allowed; }
         .btn-send { background-color: #6c5ce7; color: white; }
         .btn-clear { background-color: #ff4d4d; color: white; }
-
-        /* KHUNG GAME */
-        .game-container {
-            position: relative; z-index: 1; background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px); padding: 15px; border-radius: 18px;
-            border: 2px solid rgba(255, 255, 255, 0.3); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
-        }
-
+        .game-container { position: relative; z-index: 1; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(10px); padding: 15px; border-radius: 18px; border: 2px solid rgba(255, 255, 255, 0.3); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; align-items: center; gap: 10px; }
         .select-player-box { display: flex; gap: 10px; background: rgba(255, 255, 255, 0.2); padding: 8px 15px; border-radius: 12px; width: 100%; justify-content: center; align-items: center; }
         .btn-select { background-color: #00b894; color: white; padding: 8px 14px; font-size: 0.85rem; }
         .btn-restart { background-color: #e67e22; color: white; padding: 8px 14px; font-size: 0.85rem; }
-
-        #gameCanvas { border-radius: 12px; display: block; border: 2px solid #ccc; background: #ffffff; }
-        .guide-text { color: #ffeaa7; font-size: 0.82rem; text-align: center; line-height: 1.5; }
-
-        @media (max-width: 900px) {
-            body { flex-direction: column-reverse; justify-content: center; padding: 10px; }
-            .chat-container { width: 100%; } .game-container { width: 100%; }
-            #gameCanvas { width: 100%; height: auto; }
-        }
+        #gameCanvas { border-radius: 12px; display: block; border: 2px solid #ccc; background: #ffffff; max-width: 100%; height: auto; }
+        .mobile-controls { display: flex; justify-content: space-between; width: 100%; margin-top: 10px; gap: 10px; }
+        .touch-group { display: flex; gap: 8px; }
+        .btn-touch { width: 50px; height: 50px; border-radius: 50%; border: none; background: rgba(255, 255, 255, 0.25); color: white; font-size: 1.2rem; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); backdrop-filter: blur(5px); }
+        .btn-touch:active { background: rgba(255, 255, 255, 0.5); transform: scale(0.92); }
+        .btn-action { background: rgba(108, 92, 231, 0.6); }
+        .btn-block { background: rgba(46, 204, 113, 0.6); }
+        .btn-secret { background: rgba(231, 76, 60, 0.6); }
+        @media (min-width: 901px) { .mobile-controls { display: none; } }
+        @media (max-width: 900px) { body { flex-direction: column-reverse; justify-content: center; padding: 10px; } .chat-container { width: 100%; } .game-container { width: 100%; } }
     </style>
 </head>
 <body>
@@ -95,15 +67,22 @@
         </div>
 
         <canvas id="gameCanvas" width="500" height="400"></canvas>
-        
-        <div class="guide-text">
-            🎮 <b>Di chuyển</b>: A - D | 🦘 <b>Nhảy</b>: W / SPACE <br>
-            ⚔️ <b>Đánh thường</b>: Phím J | 🛡️ <b>Block</b>: Phím K
+
+        <div class="mobile-controls">
+            <div class="touch-group">
+                <button class="btn-touch" id="btnLeft">◀</button>
+                <button class="btn-touch" id="btnRight">▶</button>
+                <button class="btn-touch" id="btnJump">▲</button>
+            </div>
+            <div class="touch-group">
+                <button class="btn-touch btn-action" id="btnAttack">⚔️</button>
+                <button class="btn-touch btn-block" id="btnShield">🛡️</button>
+                <button class="btn-touch btn-secret" id="btnE">👁️</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // --- 1. CHAT LOGIC ---
         const socket = io('https://congamewibu.onrender.com');
         const usernameInput = document.getElementById('usernameInput');
         const messageInput = document.getElementById('messageInput');
@@ -112,7 +91,6 @@
         window.onload = () => {
             const history = JSON.parse(localStorage.getItem('chat_history')) || [];
             history.forEach(data => addMessageToBox(data));
-            selectRole('p1');
         };
 
         function addMessageToBox(data) {
@@ -145,7 +123,7 @@
             }
         }
 
-        // --- 2. GAME LOGIC ---
+        // --- GAME LOGIC ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -157,42 +135,43 @@
         const gravity = 0.6;
         const jumpPower = -12;
 
-        let myRole = 'p1';
+        let myRole = null;
         let isGameOver = false;
 
         let players = {
-            p1: { x: 50, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 5, active: true, direction: 1, isAttacking: false, isBlocking: false, hitTimer: 0, walkFrame: 0 },
-            p2: { x: 370, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 5, active: true, direction: -1, isAttacking: false, isBlocking: false, hitTimer: 0, walkFrame: 0 }
+            p1: { x: 50, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 5, active: false, direction: 1, isAttacking: false, isBlocking: false, hitTimer: 0, walkFrame: 0 },
+            p2: { x: 370, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 5, active: false, direction: -1, isAttacking: false, isBlocking: false, hitTimer: 0, walkFrame: 0 }
         };
 
         let sharinganSkill = { active: false, x: 0, y: 0, angle: 0, timer: null };
 
+        socket.on('init_state', (state) => {
+            if (state.p1) players.p1 = { ...players.p1, ...state.p1 };
+            if (state.p2) players.p2 = { ...players.p2, ...state.p2 };
+        });
+
         function selectRole(role) {
             myRole = role;
-            players[role].active = true;
-            document.getElementById('btnP1').disabled = (role === 'p1');
-            document.getElementById('btnP2').disabled = (role === 'p2');
             socket.emit('select_role', role);
         }
 
-        socket.on('role_selected', (role) => {
-            players[role].active = true;
-            if (role === 'p1') document.getElementById('btnP1').disabled = true;
-            if (role === 'p2') document.getElementById('btnP2').disabled = true;
+        socket.on('role_selected', (data) => {
+            players[data.role].active = true;
+            if (myRole === 'p1') {
+                document.getElementById('btnP1').disabled = true;
+            } else if (myRole === 'p2') {
+                document.getElementById('btnP2').disabled = true;
+            }
         });
 
         function restartGame() {
-            isGameOver = false;
-            players.p1.hp = 5; players.p1.x = 50; players.p1.y = groundY - 80; players.p1.hitTimer = 0;
-            players.p2.hp = 5; players.p2.x = 370; players.p2.y = groundY - 80; players.p2.hitTimer = 0;
-            sharinganSkill.active = false;
             socket.emit('restart_game');
         }
 
-        socket.on('game_restarted', () => {
+        socket.on('game_restarted', (state) => {
             isGameOver = false;
-            players.p1.hp = 5; players.p1.x = 50; players.p1.y = groundY - 80; players.p1.hitTimer = 0;
-            players.p2.hp = 5; players.p2.x = 370; players.p2.y = groundY - 80; players.p2.hitTimer = 0;
+            players.p1 = { ...players.p1, ...state.p1, hp: 5, x: 50, y: groundY - 80 };
+            players.p2 = { ...players.p2, ...state.p2, hp: 5, x: 370, y: groundY - 80 };
             sharinganSkill.active = false;
         });
 
@@ -200,24 +179,43 @@
         window.addEventListener('keydown', (e) => { 
             let key = e.key.toLowerCase();
             keys[key] = true; 
-            
-            if (isGameOver) return; // Khóa điều khiển khi thua
+            if (isGameOver || !myRole) return;
 
-            if ((key === 'w' || key === ' ') && myRole && players[myRole].isGrounded) {
+            if ((key === 'w' || key === ' ') && players[myRole].isGrounded) {
                 players[myRole].vy = jumpPower;
                 players[myRole].isGrounded = false;
             }
-
-            if (key === 'j' && myRole && !players[myRole].isAttacking) {
-                performAttack();
-            }
-
-            if (key === 'e' && myRole === 'p1' && !sharinganSkill.active) {
-                triggerSharingan();
-            }
+            if (key === 'j' && !players[myRole].isAttacking) performAttack();
+            if (key === 'e' && myRole === 'p1' && !sharinganSkill.active) triggerSharingan();
         });
 
         window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+        function setupTouchBtn(btnId, keyName) {
+            const btn = document.getElementById(btnId);
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                keys[keyName] = true;
+                if (!myRole || isGameOver) return;
+                if (keyName === 'w' && players[myRole].isGrounded) {
+                    players[myRole].vy = jumpPower;
+                    players[myRole].isGrounded = false;
+                }
+                if (keyName === 'j' && !players[myRole].isAttacking) performAttack();
+                if (keyName === 'e' && myRole === 'p1' && !sharinganSkill.active) triggerSharingan();
+            });
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                keys[keyName] = false;
+            });
+        }
+
+        setupTouchBtn('btnLeft', 'a');
+        setupTouchBtn('btnRight', 'd');
+        setupTouchBtn('btnJump', 'w');
+        setupTouchBtn('btnAttack', 'j');
+        setupTouchBtn('btnShield', 'k');
+        setupTouchBtn('btnE', 'e');
 
         function performAttack() {
             let me = players[myRole];
@@ -225,16 +223,13 @@
             let enemy = players[enemyRole];
 
             me.isAttacking = true;
-
             let attackRange = 90;
             let dist = Math.abs((me.x + me.size/2) - (enemy.x + enemy.size/2));
 
-            if (dist <= attackRange) {
-                if (!enemy.isBlocking) {
-                    enemy.hp = Math.max(0, enemy.hp - 1);
-                    enemy.hitTimer = 30;
-                    enemy.x += me.direction * 15;
-                }
+            if (dist <= attackRange && !enemy.isBlocking) {
+                enemy.hp = Math.max(0, enemy.hp - 1);
+                enemy.hitTimer = 30;
+                enemy.x += me.direction * 15;
             }
 
             setTimeout(() => { me.isAttacking = false; }, 250);
@@ -251,10 +246,14 @@
                 enemy.hitTimer = 30;
             }
 
-            sharinganSkill.timer = setTimeout(() => {
-                sharinganSkill.active = false;
-            }, 2000);
+            sharinganSkill.timer = setTimeout(() => { sharinganSkill.active = false; }, 2000);
         }
+
+        socket.on('player_updated', (data) => {
+            if (data.role !== myRole) {
+                players[data.role] = { ...players[data.role], ...data.data };
+            }
+        });
 
         function updateGame() {
             if (!isGameOver && myRole && players[myRole]) {
@@ -284,16 +283,10 @@
 
                 if (p.hitTimer > 0) p.hitTimer--;
 
+                // Gửi dữ liệu vị trí lên Server
                 socket.emit('update_player', { role: myRole, data: p });
             }
 
-            socket.on('player_updated', (data) => {
-                if (data.role !== myRole) {
-                    players[data.role] = { ...players[data.role], ...data.data };
-                }
-            });
-
-            // KIỂM TRA ĐIỀU KIỆN GAME OVER
             if (players.p1.hp <= 0 || players.p2.hp <= 0) {
                 isGameOver = true;
             }
@@ -312,16 +305,14 @@
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Đường mặt đất
             ctx.fillStyle = '#8e44ad';
             ctx.fillRect(0, groundY, canvas.width, 5);
             ctx.fillStyle = '#f39c12';
             ctx.fillRect(0, groundY + 5, canvas.width, canvas.height - groundY - 5);
 
-            if (players.p1.active) drawCharacter(players.p1, p1Img, '#6c5ce7', 'P1');
-            if (players.p2.active) drawCharacter(players.p2, p2Img, '#e74c3c', 'P2');
+            drawCharacter(players.p1, p1Img, '#6c5ce7', 'P1');
+            drawCharacter(players.p2, p2Img, '#e74c3c', 'P2');
 
-            // SHARINGAN XOAY
             if (sharinganSkill.active && !isGameOver) {
                 ctx.save();
                 ctx.translate(sharinganSkill.x, sharinganSkill.y);
@@ -337,13 +328,11 @@
                 ctx.restore();
             }
 
-            // Thanh máu
             ctx.fillStyle = '#2d3436';
             ctx.font = 'bold 15px Arial';
-            if (players.p1.active) ctx.fillText(`P1: ${'❤️'.repeat(players.p1.hp)}`, 15, 25);
-            if (players.p2.active) ctx.fillText(`P2: ${'❤️'.repeat(players.p2.hp)}`, 360, 25);
+            ctx.fillText(`P1: ${'❤️'.repeat(players.p1.hp)}`, 15, 25);
+            ctx.fillText(`P2: ${'❤️'.repeat(players.p2.hp)}`, 360, 25);
 
-            // HIỂN THỊ MÀN HÌNH GAME OVER
             if (isGameOver) {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -372,21 +361,13 @@
                 tiltAngle = Math.cos(p.walkFrame) * 0.1 * p.direction;
             }
 
-            let hitShakeX = 0;
-            if (p.hitTimer > 0) {
-                hitShakeX = Math.sin(p.hitTimer * 0.5) * 3;
-            }
+            let hitShakeX = (p.hitTimer > 0) ? Math.sin(p.hitTimer * 0.5) * 3 : 0;
 
             ctx.translate(centerX + hitShakeX, centerY + bounceY);
             ctx.rotate(tiltAngle);
 
-            if (p.direction === -1) {
-                ctx.scale(-1, 1);
-            }
-
-            if (p.hitTimer > 0) {
-                ctx.filter = 'brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)';
-            }
+            if (p.direction === -1) ctx.scale(-1, 1);
+            if (p.hitTimer > 0) ctx.filter = 'brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)';
 
             if (img.complete && img.naturalWidth !== 0) {
                 ctx.drawImage(img, -p.size / 2, -p.size / 2, p.size, p.size);
@@ -401,24 +382,16 @@
 
             ctx.filter = 'none';
 
-            // VỆT CHÉM ĐÁNH THƯỜNG
             if (p.isAttacking) {
                 ctx.beginPath();
                 ctx.strokeStyle = '#ff7675';
                 ctx.lineWidth = 8;
                 ctx.arc(15, 0, 45, -Math.PI / 3, Math.PI / 3);
                 ctx.stroke();
-
-                ctx.beginPath();
-                ctx.strokeStyle = '#ffeaa7';
-                ctx.lineWidth = 4;
-                ctx.arc(15, 0, 45, -Math.PI / 3, Math.PI / 3);
-                ctx.stroke();
             }
 
             ctx.restore();
 
-            // KHIÊN BLOCK
             if (p.isBlocking && !isGameOver) {
                 ctx.fillStyle = 'rgba(52, 152, 219, 0.4)';
                 ctx.strokeStyle = '#2980b9';
@@ -427,9 +400,6 @@
                 ctx.arc(centerX, centerY, p.size / 1.8, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
-                
-                ctx.font = '16px Arial';
-                ctx.fillText('🛡️', centerX - 10, p.y - 10);
             }
         }
 
