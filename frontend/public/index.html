@@ -1,500 +1,278 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>App Chat & Game Wibu 2D</title>
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; touch-action: manipulation; }
-        body { display: flex; justify-content: flex-start; align-items: center; min-height: 100vh; padding: 20px; background: url('anhnen1.jpg') no-repeat center center fixed; background-size: cover; position: relative; gap: 20px; }
-        body::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.35); z-index: 0; }
-        .chat-container { position: relative; z-index: 1; width: 340px; max-width: 100%; padding: 20px; background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(12px); border-radius: 18px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.5); flex-shrink: 0; }
-        .chat-header { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid rgba(0, 0, 0, 0.08); }
-        .chat-icon { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #6c5ce7; }
-        .chat-header h2 { font-size: 1.2rem; color: #2d3436; }
-        #chat-box { width: 100%; height: 200px; border: 1px solid #e0e0e0; background: #ffffff; overflow-y: auto; padding: 12px; margin-bottom: 12px; border-radius: 12px; }
-        #chat-box p { margin-bottom: 8px; line-height: 1.4; color: #2d3436; word-wrap: break-word; }
-        #chat-box p strong { color: #6c5ce7; }
-        .input-group { display: flex; flex-direction: column; gap: 8px; }
-        .input-row { display: flex; gap: 6px; }
-        input[type="text"] { padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; outline: none; font-size: 0.95rem; }
-        #usernameInput { width: 100%; } #messageInput { flex: 1; }
-        button { padding: 10px 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; user-select: none; }
-        button:active { transform: scale(0.96); }
-        button:disabled { background-color: #b2bec3 !important; cursor: not-allowed; opacity: 0.6; }
-        .btn-send { background-color: #6c5ce7; color: white; }
-        .btn-clear { background-color: #ff4d4d; color: white; }
-        .game-container { position: relative; z-index: 1; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(10px); padding: 15px; border-radius: 18px; border: 2px solid rgba(255, 255, 255, 0.3); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .select-player-box { display: flex; gap: 10px; background: rgba(255, 255, 255, 0.2); padding: 8px 15px; border-radius: 12px; width: 100%; justify-content: center; align-items: center; }
-        .btn-select { background-color: #00b894; color: white; padding: 8px 14px; font-size: 0.85rem; }
-        .btn-cancel { background-color: #d63031 !important; color: white; }
-        .btn-restart { background-color: #e67e22; color: white; padding: 8px 14px; font-size: 0.85rem; }
-        #gameCanvas { border-radius: 12px; display: block; border: 2px solid #ccc; background: #ffffff; max-width: 100%; height: auto; }
-        .mobile-controls { display: flex; justify-content: space-between; width: 100%; margin-top: 10px; gap: 10px; }
-        .touch-group { display: flex; gap: 8px; }
-        .btn-touch { width: 50px; height: 50px; border-radius: 50%; border: none; background: rgba(255, 255, 255, 0.25); color: white; font-size: 1.2rem; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); backdrop-filter: blur(5px); }
-        .btn-touch:active { background: rgba(255, 255, 255, 0.5); transform: scale(0.92); }
-        .btn-action { background: rgba(108, 92, 231, 0.6); }
-        .btn-block { background: rgba(46, 204, 113, 0.6); }
-        .btn-secret { background: rgba(231, 76, 60, 0.6); }
-        @media (min-width: 901px) { .mobile-controls { display: none; } }
-        @media (max-width: 900px) { body { flex-direction: column-reverse; justify-content: center; padding: 10px; } .chat-container { width: 100%; } .game-container { width: 100%; } }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Đổi Nhân Vật & Reset</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background-color: #1e1e2e;
+      color: #ffffff;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    /* Màn hình Game */
+    #game-container {
+      position: relative;
+      width: 600px;
+      height: 400px;
+      background-color: #2b2b3d;
+      border: 3px solid #444466;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Bảng thông tin (Điểm số, Thời gian) */
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 18px;
+      font-weight: bold;
+      z-index: 10;
+    }
+
+    /* Nhân vật */
+    #player {
+      position: absolute;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 12px;
+      color: #fff;
+      transition: background-color 0.2s, transform 0.1s;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Vật phẩm thu thập */
+    #coin {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-color: #ffd700;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #ffd700;
+    }
+
+    /* Khu vực chứa Nút bấm */
+    #controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 20px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn:active {
+      transform: scale(0.95);
+    }
+
+    #btn-change-char {
+      background-color: #89b4fa;
+      color: #11111b;
+    }
+    #btn-change-char:hover {
+      background-color: #b4befe;
+    }
+
+    #btn-restart {
+      background-color: #f38ba8;
+      color: #11111b;
+    }
+    #btn-restart:hover {
+      background-color: #f5e0dc;
+    }
+
+    .guide {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #a6adc8;
+    }
+  </style>
 </head>
 <body>
 
-    <div class="chat-container">
-        <div class="chat-header">
-            <img src="icon.jpg" alt="Icon" class="chat-icon" onerror="this.src='https://via.placeholder.com/44'">
-            <h2>App chat wibu</h2>
-        </div>
-        <div id="chat-box"></div>
-        <div class="input-group">
-            <input type="text" id="usernameInput" placeholder="Tên của bạn...">
-            <div class="input-row">
-                <input type="text" id="messageInput" placeholder="Nhập tin nhắn...">
-                <button onclick="sendMessage()" class="btn-send">Gửi</button>
-                <button onclick="clearChat()" class="btn-clear">Xóa</button>
-            </div>
-        </div>
+  <h1>Demo Game</h1>
+
+  <!-- Màn chơi chính -->
+  <div id="game-container">
+    <div id="hud">
+      <div>Điểm: <span id="score">0</span></div>
+      <div>Thời gian: <span id="timer">30</span>s</div>
     </div>
+    <div id="player">NV 1</div>
+    <div id="coin"></div>
+  </div>
 
-    <div class="game-container">
-        <div class="select-player-box">
-            <button id="btnP1" onclick="toggleRole('p1')" class="btn-select">Chọn Player 1</button>
-            <button id="btnP2" onclick="toggleRole('p2')" class="btn-select">Chọn Player 2</button>
-            <button onclick="restartGame()" class="btn-restart">Chơi lại 🔄</button>
-        </div>
+  <!-- Bảng nút điều khiển -->
+  <div id="controls">
+    <button id="btn-change-char" class="btn">Đổi Nhân Vật: Nhân vật 1</button>
+    <button id="btn-restart" class="btn">Chơi Lại Toàn Bộ</button>
+  </div>
 
-        <canvas id="gameCanvas" width="500" height="400"></canvas>
+  <p class="guide">Sử dụng các phím mũi tên <b>W, A, S, D</b> hoặc <b>mũi tên điều hướng</b> để di chuyển.</p>
 
-        <div class="mobile-controls">
-            <div class="touch-group">
-                <button class="btn-touch" id="btnLeft">◀</button>
-                <button class="btn-touch" id="btnRight">▶</button>
-                <button class="btn-touch" id="btnJump">▲</button>
-            </div>
-            <div class="touch-group">
-                <button class="btn-touch btn-action" id="btnAttack">⚔️</button>
-                <button class="btn-touch btn-block" id="btnShield">🛡️</button>
-                <button class="btn-touch btn-secret" id="btnE">👁️</button>
-            </div>
-        </div>
-    </div>
+  <script>
+    // --- 1. DANH SÁCH NHÂN VẬT ---
+    const characters = [
+      { id: 1, name: "Nhân vật 1 (Cơ bản)", color: "#f38ba8", size: 40, speed: 5 },
+      { id: 2, name: "Nhân vật 2 (Tốc độ)", color: "#a6e3a1", size: 30, speed: 9 },
+      { id: 3, name: "Nhân vật 3 (Khổng lồ)", color: "#fab387", size: 60, speed: 3 }
+    ];
 
-    <script>
-        const socket = io('https://congamewibu.onrender.com');
-        const usernameInput = document.getElementById('usernameInput');
-        const messageInput = document.getElementById('messageInput');
-        const chatBox = document.getElementById('chat-box');
+    let currentCharIndex = 0;
+    let score = 0;
+    let timeLeft = 30;
+    let gameInterval = null;
+    let isGameOver = false;
 
-        window.onload = () => {
-            const history = JSON.parse(localStorage.getItem('chat_history')) || [];
-            history.forEach(data => addMessageToBox(data));
-        };
+    // Vị trí nhân vật & vật phẩm
+    let playerPos = { x: 50, y: 50 };
+    let coinPos = { x: 300, y: 200 };
+    const keysPressed = {};
 
-        function addMessageToBox(data) {
-            const msgElement = document.createElement('p');
-            msgElement.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
-            chatBox.appendChild(msgElement);
-            chatBox.scrollTop = chatBox.scrollHeight;
+    // Element DOM
+    const playerEl = document.getElementById("player");
+    const coinEl = document.getElementById("coin");
+    const scoreEl = document.getElementById("score");
+    const timerEl = document.getElementById("timer");
+    const btnChangeChar = document.getElementById("btn-change-char");
+    const btnRestart = document.getElementById("btn-restart");
+
+    // --- 2. CÀI ĐẶT NHÂN VẬT HỆ THỐNG ---
+    function applyCharacterStats() {
+      const char = characters[currentCharIndex];
+      
+      // Cập nhật giao diện nút
+      btnChangeChar.innerText = `Đổi Nhân Vật: ${char.name}`;
+
+      // Cập nhật hiển thị nhân vật trên màn chơi
+      playerEl.style.width = char.size + "px";
+      playerEl.style.height = char.size + "px";
+      playerEl.style.backgroundColor = char.color;
+      playerEl.innerText = `NV ${char.id}`;
+    }
+
+    // --- 3. NÚT 1: ĐỔI NHÂN VẬT ---
+    btnChangeChar.addEventListener("click", () => {
+      // Chuyển sang nhân vật kế tiếp trong danh sách (Chuyển vòng)
+      currentCharIndex = (currentCharIndex + 1) % characters.length;
+      applyCharacterStats();
+    });
+
+    // --- 4. NÚT 2: CHƠI LẠI TOÀN BỘ ---
+    btnRestart.addEventListener("click", () => {
+      resetGame();
+    });
+
+    function resetGame() {
+      // Reset chỉ số game
+      score = 0;
+      timeLeft = 30;
+      isGameOver = false;
+      scoreEl.innerText = score;
+      timerEl.innerText = timeLeft;
+
+      // Reset vị trí nhân vật về góc
+      playerPos = { x: 50, y: 50 };
+      updatePlayerPosition();
+
+      // Đặt lại vị trí điểm thưởng
+      spawnCoin();
+
+      // Reset Đếm thời gian
+      clearInterval(gameInterval);
+      gameInterval = setInterval(() => {
+        if (timeLeft > 0) {
+          timeLeft--;
+          timerEl.innerText = timeLeft;
+        } else {
+          isGameOver = true;
+          clearInterval(gameInterval);
+          alert(`Hết giờ! Điểm của bạn là: ${score}`);
         }
+      }, 1000);
+    }
 
-        function sendMessage() {
-            const username = usernameInput.value.trim() || 'Wibu Ẩn Danh';
-            const message = messageInput.value.trim();
-            if (message !== '') {
-                socket.emit('send_message', { username, message });
-                messageInput.value = '';
-            }
+    function spawnCoin() {
+      coinPos.x = Math.floor(Math.random() * (600 - 30));
+      coinPos.y = Math.floor(Math.random() * (400 - 30 - 40)) + 40; // Tránh thanh HUD phía trên
+      coinEl.style.left = coinPos.x + "px";
+      coinEl.style.top = coinPos.y + "px";
+    }
+
+    function updatePlayerPosition() {
+      playerEl.style.left = playerPos.x + "px";
+      playerEl.style.top = playerPos.y + "px";
+    }
+
+    // --- 5. LOGIC DI CHUYỂN & VÒNG LẶP GAME ---
+    window.addEventListener("keydown", (e) => { keysPressed[e.key] = true; });
+    window.addEventListener("keyup", (e) => { keysPressed[e.key] = false; });
+
+    function gameLoop() {
+      if (!isGameOver) {
+        const currentChar = characters[currentCharIndex];
+        const speed = currentChar.speed;
+
+        // Xử lý di chuyển
+        if (keysPressed["ArrowUp"] || keysPressed["w"]) playerPos.y = Math.max(0, playerPos.y - speed);
+        if (keysPressed["ArrowDown"] || keysPressed["s"]) playerPos.y = Math.min(400 - currentChar.size, playerPos.y + speed);
+        if (keysPressed["ArrowLeft"] || keysPressed["a"]) playerPos.x = Math.max(0, playerPos.x - speed);
+        if (keysPressed["ArrowRight"] || keysPressed["d"]) playerPos.x = Math.min(600 - currentChar.size, playerPos.x + speed);
+
+        updatePlayerPosition();
+
+        // Kiểm tra va chạm với Đồng xu (Ăn điểm)
+        if (
+          playerPos.x < coinPos.x + 20 &&
+          playerPos.x + currentChar.size > coinPos.x &&
+          playerPos.y < coinPos.y + 20 &&
+          playerPos.y + currentChar.size > coinPos.y
+        ) {
+          score += 10;
+          scoreEl.innerText = score;
+          spawnCoin();
         }
+      }
 
-        socket.on('receive_message', (data) => {
-            addMessageToBox(data);
-            const history = JSON.parse(localStorage.getItem('chat_history')) || [];
-            history.push(data);
-            localStorage.setItem('chat_history', JSON.stringify(history));
-        });
+      requestAnimationFrame(gameLoop);
+    }
 
-        function clearChat() {
-            if (confirm("Xóa lịch sử chat?")) {
-                localStorage.removeItem('chat_history');
-                chatBox.innerHTML = '';
-            }
-        }
-
-        // --- GAME LOGIC ---
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-
-        const p1Img = new Image(); p1Img.src = 'player1.png';
-        const p2Img = new Image(); p2Img.src = 'player2.png';
-        const sharinganImg = new Image(); sharinganImg.src = 'sharingan1.jpg';
-
-        const groundY = 320;
-        const gravity = 0.6;
-        const jumpPower = -12;
-
-        let myRole = null;
-        let isGameOver = false;
-
-        let players = {
-            p1: { x: 50, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 5, active: false, direction: 1, isAttacking: false, isBlocking: false, hitTimer: 0, walkFrame: 0 },
-            p2: { x: 370, y: groundY - 80, size: 80, vy: 0, isGrounded: true, hp: 5, active: false, direction: -1, isAttacking: false, isBlocking: false, hitTimer: 0, walkFrame: 0 }
-        };
-
-        let sharinganSkill = { active: false, x: 0, y: 0, angle: 0 };
-        let handSkill = { active: false, x: 0, y: 0 };
-
-        socket.on('init_state', (data) => {
-            if (data.gameState.p1) players.p1 = { ...players.p1, ...data.gameState.p1 };
-            if (data.gameState.p2) players.p2 = { ...players.p2, ...data.gameState.p2 };
-            updateRoleButtonsUI();
-        });
-
-        function toggleRole(role) {
-            // Nếu chưa chọn role nào HOẶC bấm đúng vào role mình đang chọn để HỦY
-            if (myRole === null || myRole === role) {
-                socket.emit('toggle_role', role);
-            }
-        }
-
-        socket.on('role_updated', (data) => {
-            players[data.role].active = data.active;
-
-            if (data.active) {
-                // Nếu mình là người kích hoạt chọn
-                if (myRole === null) myRole = data.role;
-            } else {
-                // Nếu hủy chọn
-                if (myRole === data.role) myRole = null;
-            }
-
-            updateRoleButtonsUI();
-        });
-
-        function updateRoleButtonsUI() {
-            const btnP1 = document.getElementById('btnP1');
-            const btnP2 = document.getElementById('btnP2');
-
-            // Cập nhật giao diện Nút P1
-            if (players.p1.active) {
-                if (myRole === 'p1') {
-                    btnP1.innerText = "Hủy chọn P1 ❌";
-                    btnP1.className = "btn-select btn-cancel";
-                    btnP1.disabled = false;
-                } else {
-                    btnP1.innerText = "P1 (Đã chọn)";
-                    btnP1.className = "btn-select";
-                    btnP1.disabled = true;
-                }
-            } else {
-                btnP1.innerText = "Chọn Player 1";
-                btnP1.className = "btn-select";
-                btnP1.disabled = (myRole === 'p2'); // Khóa nút nếu đang chọn P2
-            }
-
-            // Cập nhật giao diện Nút P2
-            if (players.p2.active) {
-                if (myRole === 'p2') {
-                    btnP2.innerText = "Hủy chọn P2 ❌";
-                    btnP2.className = "btn-select btn-cancel";
-                    btnP2.disabled = false;
-                } else {
-                    btnP2.innerText = "P2 (Đã chọn)";
-                    btnP2.className = "btn-select";
-                    btnP2.disabled = true;
-                }
-            } else {
-                btnP2.innerText = "Chọn Player 2";
-                btnP2.className = "btn-select";
-                btnP2.disabled = (myRole === 'p1'); // Khóa nút nếu đang chọn P1
-            }
-        }
-
-        function restartGame() {
-            socket.emit('restart_game');
-        }
-
-        socket.on('game_restarted', (data) => {
-            isGameOver = false;
-            players.p1 = { ...players.p1, ...data.gameState.p1 };
-            players.p2 = { ...players.p2, ...data.gameState.p2 };
-            sharinganSkill.active = false;
-            handSkill.active = false;
-        });
-
-        let keys = {};
-        window.addEventListener('keydown', (e) => { 
-            let key = e.key.toLowerCase();
-            keys[key] = true; 
-            if (isGameOver || !myRole) return;
-
-            if ((key === 'w' || key === ' ') && players[myRole].isGrounded) {
-                players[myRole].vy = jumpPower;
-                players[myRole].isGrounded = false;
-            }
-            if (key === 'j' && !players[myRole].isAttacking) performAttack();
-            if (key === 'e') triggerSpecialSkill();
-        });
-
-        window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
-
-        function setupTouchBtn(btnId, keyName) {
-            const btn = document.getElementById(btnId);
-            btn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                keys[keyName] = true;
-                if (!myRole || isGameOver) return;
-
-                if (keyName === 'w' && players[myRole].isGrounded) {
-                    players[myRole].vy = jumpPower;
-                    players[myRole].isGrounded = false;
-                }
-                if (keyName === 'j' && !players[myRole].isAttacking) performAttack();
-                if (keyName === 'e') triggerSpecialSkill();
-            });
-            btn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                keys[keyName] = false;
-            });
-        }
-
-        setupTouchBtn('btnLeft', 'a');
-        setupTouchBtn('btnRight', 'd');
-        setupTouchBtn('btnJump', 'w');
-        setupTouchBtn('btnAttack', 'j');
-        setupTouchBtn('btnShield', 'k');
-        setupTouchBtn('btnE', 'e');
-
-        function performAttack() {
-            socket.emit('attack', myRole);
-        }
-
-        function triggerSpecialSkill() {
-            if (myRole === 'p1' && !sharinganSkill.active) {
-                socket.emit('trigger_sharingan');
-            } else if (myRole === 'p2' && !handSkill.active) {
-                socket.emit('trigger_hand_skill');
-            }
-        }
-
-        socket.on('game_state_sync', (data) => {
-            if (data.gameState.p1) players.p1.hp = data.gameState.p1.hp;
-            if (data.gameState.p2) players.p2.hp = data.gameState.p2.hp;
-            if (data.gameState.p1) players.p1.hitTimer = data.gameState.p1.hitTimer;
-            if (data.gameState.p2) players.p2.hitTimer = data.gameState.p2.hitTimer;
-
-            if (data.attackerRole) {
-                players[data.attackerRole].isAttacking = true;
-                setTimeout(() => { players[data.attackerRole].isAttacking = false; }, 250);
-            }
-        });
-
-        // LẮNG NGHE SKILL P1 (SHARINGAN)
-        socket.on('sharingan_activated', (data) => {
-            sharinganSkill.active = true;
-            if (data.gameState) {
-                players.p1.hp = data.gameState.p1.hp;
-                players.p2.hp = data.gameState.p2.hp;
-                players.p2.hitTimer = data.gameState.p2.hitTimer;
-            }
-        });
-        socket.on('sharingan_deactivated', () => { sharinganSkill.active = false; });
-
-        // LẮNG NGHE SKILL P2 (BÀN TAY)
-        socket.on('hand_skill_activated', (data) => {
-            handSkill.active = true;
-            if (data.gameState) {
-                players.p1.hp = data.gameState.p1.hp;
-                players.p2.hp = data.gameState.p2.hp;
-                players.p1.hitTimer = data.gameState.p1.hitTimer;
-            }
-        });
-        socket.on('hand_skill_deactivated', () => { handSkill.active = false; });
-
-        socket.on('player_updated', (data) => {
-            if (data.role !== myRole) {
-                players[data.role] = { ...players[data.role], ...data.data };
-            }
-        });
-
-        function updateGame() {
-            if (!isGameOver && myRole && players[myRole]) {
-                let p = players[myRole];
-                p.isBlocking = keys['k'] || false;
-
-                if (keys['a']) {
-                    p.x = Math.max(0, p.x - 4);
-                    p.direction = -1;
-                    p.walkFrame += 0.25;
-                } else if (keys['d']) {
-                    p.x = Math.min(canvas.width - p.size, p.x + 4);
-                    p.direction = 1;
-                    p.walkFrame += 0.25;
-                } else {
-                    p.walkFrame = 0;
-                }
-
-                p.vy += gravity;
-                p.y += p.vy;
-
-                if (p.y + p.size >= groundY) {
-                    p.y = groundY - p.size;
-                    p.vy = 0;
-                    p.isGrounded = true;
-                }
-
-                socket.emit('update_player', { role: myRole, data: p });
-            }
-
-            if (players.p1.hitTimer > 0) players.p1.hitTimer--;
-            if (players.p2.hitTimer > 0) players.p2.hitTimer--;
-
-            if (players.p1.hp <= 0 || players.p2.hp <= 0) {
-                isGameOver = true;
-            }
-
-            // Vị trí Skill P1 (Sharingan) trên P2
-            if (sharinganSkill.active) {
-                sharinganSkill.x = players.p2.x + players.p2.size / 2;
-                sharinganSkill.y = players.p2.y + 10;
-                sharinganSkill.angle += 0.1;
-            }
-
-            // Vị trí Skill P2 (Bàn tay) trên đầu P1
-            if (handSkill.active) {
-                handSkill.x = players.p1.x + players.p1.size / 2;
-                handSkill.y = players.p1.y - 40; // Xuất hiện trên đầu P1
-            }
-
-            drawGame();
-            requestAnimationFrame(updateGame);
-        }
-
-        function drawGame() {
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.fillStyle = '#8e44ad';
-            ctx.fillRect(0, groundY, canvas.width, 5);
-            ctx.fillStyle = '#f39c12';
-            ctx.fillRect(0, groundY + 5, canvas.width, canvas.height - groundY - 5);
-
-            drawCharacter(players.p1, p1Img, '#6c5ce7', 'P1');
-            drawCharacter(players.p2, p2Img, '#e74c3c', 'P2');
-
-            // VẼ HIỆU ỨNG SKILL SHARINGAN (P1)
-            if (sharinganSkill.active && !isGameOver) {
-                ctx.save();
-                ctx.translate(sharinganSkill.x, sharinganSkill.y);
-                ctx.rotate(sharinganSkill.angle);
-                if (sharinganImg.complete && sharinganImg.naturalWidth !== 0) {
-                    ctx.drawImage(sharinganImg, -35, -35, 70, 70);
-                } else {
-                    ctx.fillStyle = 'red';
-                    ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI * 2); ctx.fill();
-                }
-                ctx.restore();
-            }
-
-            // VẼ HIỆU ỨNG SKILL BÀN TAY KHỐNG CHẾ (P2)
-            if (handSkill.active && !isGameOver) {
-                ctx.save();
-                ctx.translate(handSkill.x, handSkill.y);
-                
-                // Vẽ hiệu ứng bàn tay/nắm đấm đập xuống
-                ctx.font = '55px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.shadowColor = '#e74c3c';
-                ctx.shadowBlur = 15;
-                ctx.fillText('🖐️', 0, 0);
-
-                ctx.restore();
-            }
-
-            // THANH MÁU
-            ctx.fillStyle = '#2d3436';
-            ctx.font = 'bold 15px Arial';
-            ctx.fillText(`P1: ${'❤️'.repeat(players.p1.hp)}`, 15, 25);
-            ctx.fillText(`P2: ${'❤️'.repeat(players.p2.hp)}`, 360, 25);
-
-            if (isGameOver) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                ctx.fillStyle = '#ff4d4d';
-                ctx.font = 'bold 42px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 10);
-
-                let winner = (players.p1.hp > 0) ? 'PLAYER 1 CHIẾN THẮNG! 🏆' : (players.p2.hp > 0) ? 'PLAYER 2 CHIẾN THẮNG! 🏆' : 'HÒA NHANH!';
-                ctx.fillStyle = '#ffeaa7';
-                ctx.font = 'bold 20px Arial';
-                ctx.fillText(winner, canvas.width / 2, canvas.height / 2 + 30);
-            }
-        }
-
-        function drawCharacter(p, img, fallbackColor, label) {
-            ctx.save();
-            let centerX = p.x + p.size / 2;
-            let centerY = p.y + p.size / 2;
-
-            let bounceY = 0;
-            let tiltAngle = 0;
-            if (p.walkFrame > 0 && p.isGrounded && !isGameOver) {
-                bounceY = Math.sin(p.walkFrame * 2) * 5;
-                tiltAngle = Math.cos(p.walkFrame) * 0.1 * p.direction;
-            }
-
-            let hitShakeX = (p.hitTimer > 0) ? Math.sin(p.hitTimer * 0.5) * 4 : 0;
-
-            ctx.translate(centerX + hitShakeX, centerY + bounceY);
-            ctx.rotate(tiltAngle);
-
-            if (p.direction === -1) ctx.scale(-1, 1);
-            
-            if (p.hitTimer > 0) {
-                ctx.filter = 'brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)';
-            }
-
-            if (img.complete && img.naturalWidth !== 0) {
-                ctx.drawImage(img, -p.size / 2, -p.size / 2, p.size, p.size);
-            } else {
-                ctx.fillStyle = fallbackColor;
-                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 16px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(label, 0, 5);
-            }
-
-            ctx.filter = 'none';
-
-            if (p.isAttacking) {
-                ctx.beginPath();
-                ctx.strokeStyle = '#ff7675';
-                ctx.lineWidth = 8;
-                ctx.arc(15, 0, 45, -Math.PI / 3, Math.PI / 3);
-                ctx.stroke();
-            }
-
-            ctx.restore();
-
-            if (p.isBlocking && !isGameOver) {
-                ctx.fillStyle = 'rgba(52, 152, 219, 0.4)';
-                ctx.strokeStyle = '#2980b9';
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, p.size / 1.8, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-            }
-        }
-
-        updateGame();
-    </script>
+    // --- Khởi tạo ban đầu ---
+    applyCharacterStats();
+    resetGame();
+    requestAnimationFrame(gameLoop);
+  </script>
 </body>
 </html>
