@@ -227,7 +227,7 @@
             if (dist <= attackRange) {
                 if (!enemy.isBlocking) {
                     enemy.hp = Math.max(0, enemy.hp - 1);
-                    enemy.hitTimer = 60; // Trúng đòn đỏ 1 giây (60 frames)
+                    enemy.hitTimer = 30; // Trúng đòn nháy đỏ đúng 0,5 giây (30 frames)
                     enemy.x += me.direction * 15;
                 }
             }
@@ -243,7 +243,7 @@
             let enemy = players.p2;
             if (!enemy.isBlocking) {
                 enemy.hp = Math.max(0, enemy.hp - 1);
-                enemy.hitTimer = 60; // Trúng đòn đỏ 1 giây
+                enemy.hitTimer = 30; // Trúng đòn nháy đỏ đúng 0,5 giây
             }
 
             sharinganSkill.timer = setTimeout(() => {
@@ -288,11 +288,10 @@
                 }
             });
 
-            // SHARINGAN XOAY THEO CHIỀU KIM ĐỒNG HỒ
             if (sharinganSkill.active) {
                 sharinganSkill.x = players.p2.x + players.p2.size / 2;
                 sharinganSkill.y = players.p2.y + 10;
-                sharinganSkill.angle += 0.1; // Xoay liên tục theo chiều kim đồng hồ
+                sharinganSkill.angle += 0.1;
             }
 
             drawGame();
@@ -312,11 +311,11 @@
             if (players.p1.active) drawCharacter(players.p1, p1Img, '#6c5ce7', 'P1');
             if (players.p2.active) drawCharacter(players.p2, p2Img, '#e74c3c', 'P2');
 
-            // VẼ SHARINGAN XOAY TRÊN ĐẦU P2
+            // SHARINGAN XOAY
             if (sharinganSkill.active) {
                 ctx.save();
                 ctx.translate(sharinganSkill.x, sharinganSkill.y);
-                ctx.rotate(sharinganSkill.angle); // Xoay theo chiều kim đồng hồ
+                ctx.rotate(sharinganSkill.angle);
                 if (sharinganImg.complete && sharinganImg.naturalWidth !== 0) {
                     ctx.drawImage(sharinganImg, -35, -35, 70, 70);
                 } else {
@@ -347,14 +346,19 @@
                 tiltAngle = Math.cos(p.walkFrame) * 0.1 * p.direction;
             }
 
-            ctx.translate(centerX, centerY + bounceY);
+            let hitShakeX = 0;
+            if (p.hitTimer > 0) {
+                hitShakeX = Math.sin(p.hitTimer * 0.5) * 3;
+            }
+
+            ctx.translate(centerX + hitShakeX, centerY + bounceY);
             ctx.rotate(tiltAngle);
 
             if (p.direction === -1) {
                 ctx.scale(-1, 1);
             }
 
-            // TRÚNG ĐÒN ĐỎ ĐÚNG 1 GIÂY
+            // HIỆU ỨNG TRÚNG ĐÒN NHÁY ĐỎ 0.5S
             if (p.hitTimer > 0) {
                 ctx.filter = 'brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)';
             }
