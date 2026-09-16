@@ -6,8 +6,12 @@ const path = require('path');
 
 const app = express();
 app.use(cors());
+
+// Phục vụ file tĩnh và trả về trang index.html để sửa lỗi Cannot GET /
 app.use(express.static(path.join(__dirname)));
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -29,7 +33,6 @@ io.on('connection', (socket) => {
         io.emit('receive_message', data);
     });
 
-    // Toggle tự do P1/P2 không cấm đoán gì
     socket.on('toggle_role', (role) => {
         if (gameState[role]) {
             gameState[role].active = !gameState[role].active;
@@ -112,14 +115,4 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-});
-
-window.addEventListener('DOMContentLoaded', () => {
-  const intro = document.getElementById('sharingan-intro');
-  setTimeout(() => {
-    intro.style.opacity = '0';
-    setTimeout(() => {
-      intro.style.display = 'none';
-    }, 300); // Ẩn hoàn toàn sau khi mờ dần
-  }, 2000); // Tự biến mất sau đúng 2 giây
 });
