@@ -113,3 +113,13 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
+window.addEventListener('DOMContentLoaded', () => {
+  const intro = document.getElementById('sharingan-intro');
+  setTimeout(() => {
+    intro.style.opacity = '0';
+    setTimeout(() => {
+      intro.style.display = 'none';
+    }, 300); // Ẩn hoàn toàn sau khi mờ dần
+  }, 2000); // Tự biến mất sau đúng 2 giây
+});

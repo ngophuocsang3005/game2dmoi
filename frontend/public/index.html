@@ -39,9 +39,42 @@
         .btn-secret { background: rgba(231, 76, 60, 0.6); }
         @media (min-width: 901px) { .mobile-controls { display: none; } }
         @media (max-width: 900px) { body { flex-direction: column-reverse; justify-content: center; padding: 10px; } .chat-container { width: 100%; } .game-container { width: 100%; } }
+
+        /* Màn hình chờ Sharingan Intro */
+        #sharingan-intro {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.3s ease-out;
+        }
+
+        .sharingan-intro-img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            animation: spinClockwise 2s linear infinite;
+        }
+
+        @keyframes spinClockwise {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
+
+    <!-- Màn hình chờ Sharingan -->
+    <div id="sharingan-intro">
+        <img src="sharingan.jpg" alt="Sharingan Intro" class="sharingan-intro-img">
+    </div>
 
     <div class="chat-container">
         <div class="chat-header">
@@ -83,6 +116,17 @@
     </div>
 
     <script>
+        // Tự ẩn màn hình intro Sharingan sau 2 giây
+        window.addEventListener('DOMContentLoaded', () => {
+            const intro = document.getElementById('sharingan-intro');
+            setTimeout(() => {
+                intro.style.opacity = '0';
+                setTimeout(() => {
+                    intro.style.display = 'none';
+                }, 300);
+            }, 2000);
+        });
+
         const socket = io('https://congamewibu.onrender.com');
         const usernameInput = document.getElementById('usernameInput');
         const messageInput = document.getElementById('messageInput');
@@ -152,7 +196,6 @@
             updateRoleButtonsUI();
         });
 
-        // Bấm tự do chọn/bỏ chọn
         function toggleRole(role) {
             if (myRole === role) {
                 myRole = null;
